@@ -59,7 +59,7 @@ void SparkiClass::begin( ) {
   digitalWrite(STATUS_LED, LOW);
 
   // set up servo
-  //pinMode(SERVO,OUTPUT);
+  pinMode(SERVO,OUTPUT);
   //myservo.attach(SERVO);
   //myservo.write(90);
 
@@ -97,9 +97,6 @@ void SparkiClass::begin( ) {
   _steps_right[7] = 0x09;
   _steps_right[8] = 0x00;
 
-  // Ultrasonic
-  pinMode(ULTRASONIC_TRIG, OUTPUT);
-  pinMode(ULTRASONIC_ECHO, INPUT);
   
   // Buzzer
   pinMode(BUZZER, OUTPUT);
@@ -124,6 +121,11 @@ void SparkiClass::begin( ) {
   // Stepper
   motor_speed[MOTOR_LEFT] = motor_speed[MOTOR_RIGHT] = motor_speed[MOTOR_GRIPPER] =100;
 
+  // Ultrasonic
+  pinMode(ULTRASONIC_TRIG, OUTPUT);
+  pinMode(ULTRASONIC_ECHO, INPUT);
+
+  
   // Set up the scheduler routine to run every 100uS, based off Timer4
   
   cli();          // disable all interrupts
@@ -146,7 +148,6 @@ void SparkiClass::begin( ) {
 * Infrared line sensors
 */
 
-/*
 
 int SparkiClass::edgeRight(){
     return readIR(EDGE_RIGHT);
@@ -167,7 +168,7 @@ int SparkiClass::lineLeft(){
 int SparkiClass::edgeLeft(){
 	return readIR(EDGE_LEFT);	
 }
-*/
+
 int SparkiClass::readIR(int pin){
     int read=0;
 	onIR();
@@ -198,7 +199,7 @@ void SparkiClass::RGB(uint8_t R, uint8_t G, uint8_t B)
 }
 
 
-void SparkiClass::rotateRight(float deg)
+void SparkiClass::moveRight(float deg)
 {
   float turn = 21.388888*deg;
   rotateRight();
@@ -206,14 +207,14 @@ void SparkiClass::rotateRight(float deg)
   moveStop();
 }
 
-void SparkiClass::rotateRight()
+void SparkiClass::moveRight()
 {
   motorRotate(MOTOR_LEFT, DIR_CCW, 100);
   motorRotate(MOTOR_RIGHT, DIR_CCW, 100);
   
 }
 
-void SparkiClass::rotateLeft(float deg)
+void SparkiClass::moveLeft(float deg)
 {
   float turn = 21.388888*deg;
   rotateLeft();
@@ -221,7 +222,7 @@ void SparkiClass::rotateLeft(float deg)
   moveStop();
 }
 
-void SparkiClass::rotateLeft()
+void SparkiClass::moveLeft()
 {
   motorRotate(MOTOR_LEFT, DIR_CW, 100);
   motorRotate(MOTOR_RIGHT, DIR_CW, 100);

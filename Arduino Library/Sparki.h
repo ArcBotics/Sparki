@@ -31,7 +31,7 @@
 // defining battery monitor constants
 //#define BATTERY_MONITOR     A2       // PF5
 //#define ADC_REFERENCE       2.56
-//#define VOLTAGE_DIVIDER     5.7  	 // change to 2.47 using 10k and 6.8k resistors
+//#define VOLTAGE_DIVIDER     4.7  	 // using 47k and 10k resistors
 //#define MAX_BAT_V          (VOLTAGE_DIVIDER * ADC_REFERENCE) 
 
 // defining the buttons on the shipped-with remote control
@@ -103,6 +103,14 @@ public:
   void beep();
   void RGB(uint8_t,uint8_t,uint8_t);
 
+
+/*
+* Light level sensors
+*/
+  int lightRight();
+  int lightCenter();
+  int lightLeft();
+
 /*
 * Infrared line sensors
 */
@@ -122,18 +130,19 @@ public:
   void moveBackward(float);
   void moveBackward();
   
-  void rotateLeft(float);
-  void rotateLeft();
+  void moveLeft(float);
+  void moveLeft();
   
-  void rotateRight(float);
-  void rotateRight();
+  void moveRight(float);
+  void moveRight();
   
+  void moveStop();
+   
   void gripOpen();
   void gripClose();
   void gripStop();
-  
-  
-  void moveStop();
+
+  int single_ping();
 
 /*
  * individual motor control (non-blocking)
@@ -162,7 +171,7 @@ public:
 private:  
   byte stepIndex[2];   
   
-  int ping_single();
+  
   void setSteps(uint8_t motor, uint32_t steps);  // sets the number of remaining steps, motor stops when this is 0
   uint32_t getSteps(uint8_t motor ); // returns the number of remaining steps
   static void scheduler();
