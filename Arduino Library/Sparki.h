@@ -2,37 +2,40 @@
 #define Sparki_h
 
 #include "Accelerometer.h"
-#include "Display.h"
 
 #define SHIFTREG_LATCH      TXLED0   // PD5
 #define STATUS_LED          13        
 #define BUZZER              11       // PB7
-#define ULTRASONIC_TRIG     5        // PC6
-#define ULTRASONIC_ECHO     10       // PB6
+#define ULTRASONIC_ECHO     5        // PC6
+#define ULTRASONIC_TRIG     10       // PB6
 #define IR_RECEIVE          7        // PE6
 #define IR_SEND             6        // PD7
 
-#define GRAB_SENSE          A9        // PB5
-
 #define SERVO               9        // 
 
-// defining the IR line sensor pins
-//#define EDGE_RIGHT          A1       
-//#define LINE_LEFT           A8       
-//#define LINE_CENTER         A11      
-//#define LINE_RIGHT          A6       
-//#define EDGE_LEFT           A2       
+// defining the MUX pins
+#define MUX_ANALOG		A2 // PF5
+#define MUX_A  	        A3 // PF4
+#define MUX_B      		A4 // PF1
+#define MUX_C        	A5 // PF0
+
+// defining the IR line sensor pins (on the multiplexer)
+#define IR_EDGE_RIGHT      	LOW, HIGH, LOW	// Mux A2     
+#define IR_LINE_LEFT        HIGH, HIGH, LOW	// Mux A3     
+#define IR_LINE_CENTER      LOW, LOW, LOW	// Mux A0      
+#define IR_LINE_RIGHT       HIGH, LOW, LOW	// Mux A1 
+#define IR_EDGE_LEFT        HIGH, LOW, HIGH // Mux A5       
 
 // defining the light sensors
-//#define LIGHT_LEFT          A3       // PF4
-//#define LIGHT_CENTER        A4       // PF1
-//#define LIGHT_RIGHT         A5       // PF0
+#define LIGHT_RIGHT         HIGH, HIGH, HIGH // Mux A7
+#define LIGHT_CENTER        LOW, HIGH, HIGH	 // Mux A6
+#define LIGHT_LEFT          LOW, LOW, HIGH	 // Mux A4
 
 // defining battery monitor constants
-//#define BATTERY_MONITOR     A2       // PF5
-//#define ADC_REFERENCE       2.56
-//#define VOLTAGE_DIVIDER     4.7  	 // using 47k and 10k resistors
-//#define MAX_BAT_V          (VOLTAGE_DIVIDER * ADC_REFERENCE) 
+#define BATTERY_MONITOR     A10       // PB6
+#define ADC_REFERENCE       2.56
+#define VOLTAGE_DIVIDER     4.7  	 // using 47k and 10k resistors
+#define MAX_BAT_V          (VOLTAGE_DIVIDER * ADC_REFERENCE) 
 
 // defining the buttons on the shipped-with remote control
 #define REMOTE_ERROR    -2
@@ -64,7 +67,7 @@
 #define RGB_R 0x01 // pin value of the Red LED on the RGB on the shift register
 #define RGB_G 0x02 // pin value of the Green LED on the RGB on the shift register
 #define RGB_B 0x04 // pin value of the Blue LED on the RGB on the shift register
-#define RGB_SHIFT 2 // which shift register the RGB is on (starts at 0)
+#define RGB_SHIFT 1 // which shift register the RGB is on (starts at 0)
 
 // properties about the robot in cm
 const float WHEEL_DIAMETER_CM     = 5.15;
@@ -103,7 +106,7 @@ public:
   void beep();
   void RGB(uint8_t,uint8_t,uint8_t);
 
-
+  void setMux(uint8_t, uint8_t, uint8_t);
 /*
 * Light level sensors
 */
@@ -119,6 +122,7 @@ public:
   int lineCenter();
   int lineLeft();  
   int edgeLeft();
+  
   int readIR(int);
 
 /*
@@ -142,7 +146,7 @@ public:
   void gripClose();
   void gripStop();
 
-  int single_ping();
+  int ping_single();
 
 /*
  * individual motor control (non-blocking)
@@ -168,7 +172,8 @@ public:
    
  void onIR();
  void offIR();
-private:  
+private:   
+  
   byte stepIndex[2];   
   
   

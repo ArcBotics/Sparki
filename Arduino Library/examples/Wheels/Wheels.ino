@@ -24,10 +24,10 @@ void loop()
   robot.moveBackward(); // move the robot backward
   delay(1000);
   
-  robot.rotateRight(); // rotate rhe robot clockwise
+  robot.moveRight(); // rotate rhe robot clockwise
   delay(1000);
   
-  robot.rotateLeft(); // rotate rhe robot counter-clockwise
+  robot.moveLeft(); // rotate rhe robot counter-clockwise
   delay(1000);
   
   robot.moveStop(); // stop all robot wheels

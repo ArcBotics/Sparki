@@ -51,30 +51,49 @@ SparkiClass::SparkiClass()
 void SparkiClass::begin( ) {
   Serial.begin(9600);
 
-  // setup the IR Switch
-  irSwitch = 0;
-
   // set up the Status LED
   pinMode(STATUS_LED, OUTPUT);
   digitalWrite(STATUS_LED, LOW);
 
-  // set up servo
+  // set up Servo
   pinMode(SERVO,OUTPUT);
-  //myservo.attach(SERVO);
-  //myservo.write(90);
+  digitalWrite(SERVO, LOW);
+  /*
+  myservo.attach(SERVO);
+  myservo.write(90);
+  delay(200);
+  myservo.detach(SERVO);
+  */
 
-  // setup variables for the RGB
-  RGB_vals[0] = 0;
-  RGB_vals[1] = 0;
-  RGB_vals[2] = 0;
+  // Setup Buzzer
+  pinMode(BUZZER, OUTPUT);
+  digitalWrite(BUZZER, LOW);
   
-  RGB_timer = 0;
+  // Setup Analog Multiplexer
+  pinMode(MUX_ANALOG, INPUT);
+  pinMode(MUX_A, OUTPUT);
+  pinMode(MUX_B, OUTPUT);
+  pinMode(MUX_C, OUTPUT);
+  
+  // Setup IR Remote
+  pinMode(IR_RECEIVE, INPUT);
+  
+  // Setup IR Send
+  pinMode(IR_SEND, OUTPUT);
+  
+  // Setup Ultrasonic
+  pinMode(ULTRASONIC_TRIG, OUTPUT);
+  pinMode(ULTRASONIC_ECHO, INPUT);
+  
 
   // Setup the SPI bus for the shift register
   // !!! Need to remove the essential functions from the SPI Library, 
   // !!! and include in the main code
   SPI.begin(); 
   SPI.setClockDivider(SPI_CLOCK_DIV2); 
+
+  // Setup the IR Switch
+  irSwitch = 0;
 
   // defining steps for the stepper motors
   _steps_left[0] = 0x10;
@@ -97,37 +116,10 @@ void SparkiClass::begin( ) {
   _steps_right[7] = 0x09;
   _steps_right[8] = 0x00;
 
-  
-  // Buzzer
-  pinMode(BUZZER, OUTPUT);
-  digitalWrite(BUZZER, LOW);
-  
-  // Light Sensors
-  //pinMode(LIGHT_LEFT, INPUT);  
-  //pinMode(LIGHT_CENTER, INPUT); 
-  //pinMode(LIGHT_RIGHT, INPUT); 
-  
-  // IR Line Sensors
-  //pinMode(LINE_LEFT, INPUT);  
-  //pinMode(LINE_CENTER, INPUT); 
-  //pinMode(LINE_RIGHT, INPUT); 
-  
-  // IR Remote
-  pinMode(IR_RECEIVE, INPUT);
-  
-  // IR Send
-  pinMode(IR_SEND, OUTPUT);
-  
-  // Stepper
+  // Setup initial Stepper settings
   motor_speed[MOTOR_LEFT] = motor_speed[MOTOR_RIGHT] = motor_speed[MOTOR_GRIPPER] =100;
-
-  // Ultrasonic
-  pinMode(ULTRASONIC_TRIG, OUTPUT);
-  pinMode(ULTRASONIC_ECHO, INPUT);
-
   
-  // Set up the scheduler routine to run every 100uS, based off Timer4
-  
+  // Set up the scheduler routine to run every 100uS, based off Timer4 interrupt
   cli();          // disable all interrupts
   TCCR4A = 0;
   TCCR4B = 0;
@@ -139,9 +131,34 @@ void SparkiClass::begin( ) {
   TIMSK4 |= (1 << OCIE4A);  // enable timer compare interrupt
   sei();             // enable all interrupts
   
-  
   //Timer1.initialize(100); // the scheduler function gets called every 100uS
   //Timer1.attachInterrupt(scheduler);
+}
+
+void SparkiClass::setMux(uint8_t A, uint8_t B, uint8_t C){
+	digitalWrite(MUX_A, A);
+	digitalWrite(MUX_B, B);
+	digitalWrite(MUX_C, C);
+	delay(1);
+}
+
+/* 
+* Light Sensors
+*/
+
+int SparkiClass::lightRight(){
+	setMux(LIGHT_RIGHT);
+	return analogRead(MUX_ANALOG);
+}
+
+int SparkiClass::lightCenter(){
+	setMux(LIGHT_CENTER);
+	return analogRead(MUX_ANALOG);
+}
+
+int SparkiClass::lightLeft(){
+	setMux(LIGHT_LEFT);
+	return analogRead(MUX_ANALOG);
 }
 
 /*
@@ -150,23 +167,28 @@ void SparkiClass::begin( ) {
 
 
 int SparkiClass::edgeRight(){
-    return readIR(EDGE_RIGHT);
+	setMux(IR_EDGE_RIGHT);
+    return readIR(MUX_ANALOG);
 }
 
 int SparkiClass::lineRight(){
-    return readIR(LINE_RIGHT);
+	setMux(IR_LINE_RIGHT);
+    return readIR(MUX_ANALOG);
 }
 
 int SparkiClass::lineCenter(){
-	return readIR(LINE_CENTER);
+	setMux(IR_LINE_CENTER);
+    return readIR(MUX_ANALOG);
 }
 
 int SparkiClass::lineLeft(){
-	return readIR(LINE_LEFT);
+	setMux(IR_LINE_LEFT);
+    return readIR(MUX_ANALOG);
 }
 
 int SparkiClass::edgeLeft(){
-	return readIR(EDGE_LEFT);	
+	setMux(IR_EDGE_LEFT);
+    return readIR(MUX_ANALOG);
 }
 
 int SparkiClass::readIR(int pin){
@@ -176,6 +198,8 @@ int SparkiClass::readIR(int pin){
 	offIR();
 	return read;
 }
+
+
 
 void SparkiClass::beep(){
   for(short i=0; i<300; i++){
@@ -187,7 +211,7 @@ void SparkiClass::beep(){
 }
 
 /*
- * motor control (non-blocking)
+ * motor control (non-blocking, except when moving distances)
  * speed is percent 0-100
 */
 
@@ -202,7 +226,7 @@ void SparkiClass::RGB(uint8_t R, uint8_t G, uint8_t B)
 void SparkiClass::moveRight(float deg)
 {
   float turn = 21.388888*deg;
-  rotateRight();
+  moveRight();
   delay(long(turn));
   moveStop();
 }
@@ -217,7 +241,7 @@ void SparkiClass::moveRight()
 void SparkiClass::moveLeft(float deg)
 {
   float turn = 21.388888*deg;
-  rotateLeft();
+  moveLeft();
   delay(long(turn));
   moveStop();
 }
@@ -264,7 +288,6 @@ void SparkiClass::moveStop()
   motorStop(MOTOR_RIGHT);
 }
 
-
 void SparkiClass::gripOpen()
 {
   motorRotate(MOTOR_GRIPPER, DIR_CCW, 100);
@@ -277,8 +300,6 @@ void SparkiClass::gripStop()
 {
   motorStop(MOTOR_GRIPPER);
 }
-
-
 
 void SparkiClass::motorRotate(int motor, int direction,  int speed)
 {
@@ -294,7 +315,6 @@ void SparkiClass::motorRotate(int motor, int direction,  int speed)
    SREG = oldSREG; 
    delay(10);
 }
-
 
 void SparkiClass::motorStop(int motor)
 {
@@ -483,7 +503,6 @@ ISR(TIMER4_COMPA_vect)          // interrupt service routine that wraps a user d
 	// clear the shift register values so we can re-write them
     shift_outputs[0] = 0x00;
     shift_outputs[1] = 0x00;
-    shift_outputs[2] = 0x00;
     
     // Update the RGB leds
     if(RGB_timer < RGB_vals[0]){ // update Red led
@@ -501,14 +520,13 @@ ISR(TIMER4_COMPA_vect)          // interrupt service routine that wraps a user d
     }
 
     // IR Detection Switch
-    if(irSwitch == 1){
-    	shift_outputs[0] |= 0x08;
+    if(irSwitch == 0){
+    	shift_outputs[1] &= 0xF7;
+    }
+    else{
+    	shift_outputs[1] |= 0x08;
     }
     
-    if(irSwitch2 == 1){
-        shift_outputs[2] |= 0x08;
-    }
-
     //// Motor Control ////
     
     //   Determine what state the stepper coils are in
@@ -540,17 +558,16 @@ ISR(TIMER4_COMPA_vect)          // interrupt service routine that wraps a user d
 		}
 	}
 
-    shift_outputs[1] |= _steps_right[step_index[MOTOR_RIGHT]];
-    shift_outputs[1] |= _steps_left[step_index[MOTOR_GRIPPER]];
+    shift_outputs[0] |= _steps_right[step_index[MOTOR_RIGHT]];
+    shift_outputs[0] |= _steps_left[step_index[MOTOR_GRIPPER]];
     
-    shift_outputs[2] |= _steps_left[step_index[MOTOR_LEFT]];
+    shift_outputs[1] |= _steps_left[step_index[MOTOR_LEFT]];
     
 
 	//output values to shift registers
     PORTD &= 0xDF;    // pull PD5 low
-    SPI.transfer(shift_outputs[2]);
     SPI.transfer(shift_outputs[1]);
-    //SPI.transfer(shift_outputs[0]);
+    SPI.transfer(shift_outputs[0]);
     PORTD |= 0x20;    // pull PD5 high to latch in spi transfers
     SREG = oldSREG;
 }

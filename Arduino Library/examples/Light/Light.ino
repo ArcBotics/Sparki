@@ -16,18 +16,18 @@ void setup() {
 }
 
 void loop() {
-  int left = analogRead(LIGHT_LEFT); // read the left side light sensor
-  int middle = analogRead(LIGHT_MIDDLE); // read the middle light sensor
-  int right = analogRead(LIGHT_RIGHT); // read the right side light sensor
+  int left = robot.lightLeft(); 	// read the left side light sensor
+  int middle = robot.lightCenter();     // read the middle light sensor
+  int right = robot.lightRight(); 	// read the right side light sensor
   
   Serial.print("Left "); 
-  Serial.println(left); // print the value of the left side light sensor
+  Serial.println(left); 	// print the value of the left side light sensor
   
   Serial.print("Middle "); 
-  Serial.println(middle); // print the value of the middle light sensor
+  Serial.println(middle); 	// print the value of the middle light sensor
   
   Serial.print("Right "); 
-  Serial.println(right); // print the value of the right side light sensor
+  Serial.println(right);	// print the value of the right side light sensor
   
   Serial.println(""); // create a blank line
   
