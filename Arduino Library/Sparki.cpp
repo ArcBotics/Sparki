@@ -92,6 +92,13 @@ void SparkiClass::begin( ) {
   SPI.begin(); 
   SPI.setClockDivider(SPI_CLOCK_DIV2); 
 
+  // Clear out the shift registers
+  PORTD &= 0xDF;    // pull PD5 low
+  SPI.transfer(shift_outputs[1]);
+  SPI.transfer(shift_outputs[0]);
+  PORTD |= 0x20;    // pull PD5 high to latch in spi transfers
+
+
   // Setup the IR Switch
   irSwitch = 0;
 
@@ -555,6 +562,9 @@ ISR(TIMER4_COMPA_vect)          // interrupt service routine that wraps a user d
 		}
 		else if( step_index[motor] < 0){
 			step_index[motor] = 7;
+		}
+		if(isRunning[motor] == false){
+			step_index[motor] = 8;
 		}
 	}
 
