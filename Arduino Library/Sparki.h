@@ -20,11 +20,11 @@
 #define MUX_C        	A5 // PF0
 
 // defining the IR line sensor pins (on the multiplexer)
-#define IR_EDGE_RIGHT      	LOW, HIGH, LOW	// Mux A2     
-#define IR_LINE_LEFT        HIGH, HIGH, LOW	// Mux A3     
+#define IR_EDGE_LEFT      	LOW, HIGH, LOW	// Mux A2     
+#define IR_LINE_LEFT        HIGH, LOW, LOW	// Mux A1     
 #define IR_LINE_CENTER      LOW, LOW, LOW	// Mux A0      
-#define IR_LINE_RIGHT       HIGH, LOW, LOW	// Mux A1 
-#define IR_EDGE_LEFT        HIGH, LOW, HIGH // Mux A5       
+#define IR_LINE_RIGHT       HIGH, HIGH, LOW	// Mux A3 
+#define IR_EDGE_RIGHT       HIGH, LOW, HIGH // Mux A5       
 
 // defining the light sensors
 #define LIGHT_RIGHT         HIGH, HIGH, HIGH // Mux A7
