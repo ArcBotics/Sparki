@@ -28,6 +28,14 @@ static volatile uint16_t RGB_timer;
 static volatile uint8_t irSwitch;
 static volatile uint8_t irSwitch2;
 
+// variables for communication between the IR read function and its interrupt
+#define MAX_IR_PULSE 20000
+volatile long timeSinceLastPulse = 0;
+volatile long lastPulseTime = 0;
+volatile uint16_t pulsesIR[50][2]; // LOW,HIGH
+volatile uint8_t currentPulse = 0;
+volatile uint8_t haltIRRead = 0;
+
 // keeps track of what's being outputted to the shift registers
 
 
@@ -74,9 +82,6 @@ void SparkiClass::begin( ) {
   pinMode(MUX_A, OUTPUT);
   pinMode(MUX_B, OUTPUT);
   pinMode(MUX_C, OUTPUT);
-  
-  // Setup IR Remote
-  pinMode(IR_RECEIVE, INPUT);
   
   // Setup IR Send
   pinMode(IR_SEND, OUTPUT);
@@ -138,8 +143,14 @@ void SparkiClass::begin( ) {
   TIMSK4 |= (1 << OCIE4A);  // enable timer compare interrupt
   sei();             // enable all interrupts
   
-  //Timer1.initialize(100); // the scheduler function gets called every 100uS
-  //Timer1.attachInterrupt(scheduler);
+  // Setup the IR Remote Control pin and pin interrupt
+  noInterrupts();
+  pinMode(IR_RECEIVE, INPUT);
+  
+  // Setup the pin interrupt for INT6 (Pin 7) to trigger the IR function
+  EICRB = (EICRB & ~((1 << ISC60) | (1 << ISC61))) | (CHANGE << ISC60);
+  EIMSK |= (1 << INT6); 
+  interrupts();
 }
 
 void SparkiClass::setMux(uint8_t A, uint8_t B, uint8_t C){
@@ -175,38 +186,36 @@ int SparkiClass::lightLeft(){
 
 int SparkiClass::edgeRight(){
 	setMux(IR_EDGE_RIGHT);
-    return readIR(MUX_ANALOG);
+    return readSensorIR(MUX_ANALOG);
 }
 
 int SparkiClass::lineRight(){
 	setMux(IR_LINE_RIGHT);
-    return readIR(MUX_ANALOG);
+    return readSensorIR(MUX_ANALOG);
 }
 
 int SparkiClass::lineCenter(){
 	setMux(IR_LINE_CENTER);
-    return readIR(MUX_ANALOG);
+    return readSensorIR(MUX_ANALOG);
 }
 
 int SparkiClass::lineLeft(){
 	setMux(IR_LINE_LEFT);
-    return readIR(MUX_ANALOG);
+    return readSensorIR(MUX_ANALOG);
 }
 
 int SparkiClass::edgeLeft(){
 	setMux(IR_EDGE_LEFT);
-    return readIR(MUX_ANALOG);
+    return readSensorIR(MUX_ANALOG);
 }
 
-int SparkiClass::readIR(int pin){
-    int read=0;
+int SparkiClass::readSensorIR(int pin){
+    int read = 0;
 	onIR();
 	read = analogRead(pin);
 	offIR();
 	return read;
 }
-
-
 
 void SparkiClass::beep(){
   for(short i=0; i<300; i++){
@@ -262,7 +271,7 @@ void SparkiClass::moveLeft()
 
 void SparkiClass::moveForward(float cm)
 {
-  float run = 22.2222222*cm;
+  float run = 222.222222*cm;
   moveForward();
   delay(run);
   moveStop();
@@ -277,7 +286,7 @@ void SparkiClass::moveForward()
 
 void SparkiClass::moveBackward(float cm)
 {
-  float run = 22.2222222*cm;
+  float run = 222.222222*cm;
   moveBackward();
   delay(run);
   moveStop();
@@ -359,11 +368,6 @@ void SparkiClass::motorsRotateSteps( int leftDir, int rightDir,  int speed, uint
    SREG = oldSREG; 
    return result;
  }
-/*
-void SparkiClass::servo(int pos){
-	myservo.write(pos);
-}
-*/
 
 int SparkiClass::ping_single(){
   long duration; 
@@ -386,7 +390,7 @@ int SparkiClass::ping_single(){
   // convert the timeout from microseconds to a number of times through
   // the initial loop; it takes 16 clock cycles per iteration.
   unsigned long numloops = 0;
-  unsigned long maxloops = 500;
+  unsigned long maxloops = 5000;
 	
   // wait for any previous pulse to end
   while ((*portInputRegister(port) & bit) == stateMask)
@@ -441,20 +445,74 @@ int SparkiClass::ping(){
   }
   
   // return the middle entry
-  return int(distances[(int)ceil((float)attempts/2.0)]);
-  
+  return int(distances[(int)ceil((float)attempts/2.0)]); 
 }
 
-void SparkiClass::onGrabIR()  // turns off the IR Detection LEDs
-{
-    irSwitch2 = 1;
-    delay(1); // give time for a scheduler cycle to run
+/*
+Returns the current IR Code. 
+Uses the interrupt on INT6 (PE6, Pin 7) to do the signal reading
+If there is no code waiting, pass -1 back immediately.
+If there is a code, but its still reading, wait it out then return code
+Wipes the current stored code once read.
+
+NEC IR code details here:
+http://wiki.altium.com/display/ADOH/NEC+Infrared+Transmission+Protocol
+*/
+
+int SparkiClass::readIR(){
+    uint8_t code = 0;
+    if(currentPulse != 0){ // check there's a code waiting
+        while( micros()-lastPulseTime <= MAX_IR_PULSE){
+            delayMicroseconds(MAX_IR_PULSE);
+        }; // wait for the reading to time out
+        // tell the interrupt to not take any more codes
+        haltIRRead = 1;
+        
+        // decode the signal
+        for(int i=0; i<8; i++){
+
+            if(pulsesIR[17+i][1] > 1000){
+                code |= (1<<i);
+            }
+            if(pulsesIR[17+8+8-i][1] > 1000){
+                return -2; // return error code
+            }
+        }
+        currentPulse = 0; // 'reset' the current IR pulse reading
+        haltIRRead = 0;
+        return int(code); // return the decoded value
+    }
+    else{
+        return -1; // no signal found, return -1
+    }
 }
 
-void SparkiClass::offGrabIR() // turns off the IR Detection LEDs
-{
-    irSwitch2 = 0;
-    delay(1); // give time for a scheduler cycle to run
+// Watches the IR Receive pin (INT6, PE6, Pin 7) for a change, stores the variables
+// for readIR to process
+SIGNAL(INT6_vect) {
+  if(haltIRRead != 1){
+      long currentTime = micros(); // take the current time
+      int pinStatus = PINE & (1 << 6); // read the current status of the IR Pin
+      timeSinceLastPulse = currentTime-lastPulseTime;
+      
+      // Tell if its the start of the reading cycle or not (time since last pulse), starts low
+      if( (timeSinceLastPulse >= MAX_IR_PULSE) && (pinStatus == LOW)){
+        // if reading new pulse, set up. Wipes out the last pulse
+        PORTC ^= (1<<7);
+        currentPulse = 0;
+      }
+      else{
+          // otherwise, read the current code
+          if(pinStatus){ //(PE6 high) pulse has risen from the end of a low pulse
+            pulsesIR[currentPulse][0] = timeSinceLastPulse;
+          }
+          else{ //(PE6 low) pulse has fallen from the end of a high pulse
+            pulsesIR[currentPulse][1] = timeSinceLastPulse;
+            currentPulse++;
+          }  
+      }    
+      lastPulseTime = currentTime;
+  }
 }
 
 void SparkiClass::onIR()  // turns off the IR Detection LEDs

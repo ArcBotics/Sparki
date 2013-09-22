@@ -69,6 +69,10 @@
 #define RGB_B 0x04 // pin value of the Blue LED on the RGB on the shift register
 #define RGB_SHIFT 1 // which shift register the RGB is on (starts at 0)
 
+#define RED 255,0,0
+#define GREEN 0,255,0
+#define BLUE 0,0,255
+
 // properties about the robot in cm
 const float WHEEL_DIAMETER_CM     = 5.15;
 const float WHEEL_CIRCUMFERENCE_CM = WHEEL_DIAMETER_CM * PI;
@@ -123,7 +127,18 @@ public:
   int lineLeft();  
   int edgeLeft();
   
-  int readIR(int);
+  int readSensorIR(int);
+
+/*
+* Infrared Remote sensor
+*/
+  int readIR();
+
+/*
+* Infrared Remote sensor
+*/
+  int writeIR();
+
 
 /*
  * high-level move functions
