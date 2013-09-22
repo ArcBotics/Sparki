@@ -470,12 +470,8 @@ int SparkiClass::readIR(){
         
         // decode the signal
         for(int i=0; i<8; i++){
-
             if(pulsesIR[17+i][1] > 1000){
                 code |= (1<<i);
-            }
-            if(pulsesIR[17+8+8-i][1] > 1000){
-                return -2; // return error code
             }
         }
         currentPulse = 0; // 'reset' the current IR pulse reading
