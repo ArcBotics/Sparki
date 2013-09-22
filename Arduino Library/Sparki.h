@@ -12,6 +12,9 @@
 #define IR_SEND             6        // PD7
 
 #define SERVO               9        // 
+#define SERVO_LEFT          -90
+#define SERVO_CENTER        0
+#define SERVO_RIGHT         90
 
 // defining the MUX pins
 #define MUX_ANALOG		A2 // PF5
@@ -139,6 +142,11 @@ public:
 */
   int writeIR();
 
+/*
+* Servo Functions
+*/
+void startServoTimer();
+void writeServo(int);
 
 /*
  * high-level move functions
