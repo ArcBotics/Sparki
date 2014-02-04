@@ -1,7 +1,8 @@
 #ifndef Sparki_h
 #define Sparki_h
 
-#include "Accelerometer.h"
+#include "Arduino.h"
+#include "Print.h"
 
 #define SHIFTREG_LATCH      TXLED0   // PD5
 #define STATUS_LED          13        
@@ -72,11 +73,16 @@
 #define RGB_B 0x04 // pin value of the Blue LED on the RGB on the shift register
 #define RGB_SHIFT 1 // which shift register the RGB is on (starts at 0)
 
-#define RED 255,0,0
-#define GREEN 0,255,0
-#define BLUE 0,0,255
+#define RGB_RED 100,0,0
+#define RGB_GREEN 0,100,0
+#define RGB_BLUE 0,0,100
+#define RGB_OFF 0,0,0
+#define RGB_WHITE 50,70,100
+
+
 
 // properties about the robot in cm
+#define PI 3.14159
 const float WHEEL_DIAMETER_CM     = 5.15;
 const float WHEEL_CIRCUMFERENCE_CM = WHEEL_DIAMETER_CM * PI;
 const float TRACK_WIDTH            = 11.1;              //tyre seperation in cm  
@@ -162,7 +168,22 @@ const float CM_PER_DEGREE      = WHEEL_CIRCUMFERENCE_CM / 360.0;     // wheel mo
 #define SPI_2XCLOCK_MASK 0x01  // SPI2X = bit 0 on SPSR
 #define SPI_CLOCK_DIV2 0x04
 
-class SparkiClass {
+// Magnetometer definitions
+#define Measurement_Continuous 0x00  
+#define DataRegisterBegin 0x03
+#define HMC5883L_Address 0x1E
+#define DataRegisterBegin 0x03
+#define RawMagDataLength 6
+#define ConfigurationRegisterB 0x01
+#define ModeRegister 0x02
+#define M_SCALE 0.92
+
+// Accelerometer definitions
+#define MMA8452_ADDRESS 0x1D  // SA0 is high, 0x1C if low
+#define ACCEL_SCALE 2  // Sets full-scale range to +/-2, 4, or 8g. Used to calc real g values.
+#define ACCEL_DATARATE 0 //Set the output data rate: 0=800Hz, 1=400, 2=200, 3=100, 4=50, 5=12.5, 6=6.25, 7=1.56
+
+class SparkiClass : public Print {
 
 public:
   SparkiClass();
@@ -170,19 +191,19 @@ public:
   int ping();
   void begin();
   void beep();
+  void beep(int);
+  void beep(int, int);
+  void noBeep();
   void RGB(uint8_t,uint8_t,uint8_t);
 
   void setMux(uint8_t, uint8_t, uint8_t);
-/*
-* Light level sensors
-*/
+  
+// Light level sensors
   int lightRight();
   int lightCenter();
   int lightLeft();
 
-/*
-* Infrared line sensors
-*/
+// Infrared reflectance sensors
   int edgeRight();
   int lineRight();
   int lineCenter();
@@ -190,26 +211,55 @@ public:
   int edgeLeft();
   
   int readSensorIR(int);
+  int readBlindSensorIR(int,int,int);
+  int diffIR(int,int,int);
+  
 
-/*
-* Infrared Remote sensor
-*/
+// Infrared Remote sensor
   int readIR();
 
-/*
-* Infrared Remote sensor
-*/
-  int writeIR();
+// Infrared Remote sensor
+  void sendIR(uint8_t);
 
-/*
-* Servo Functions
-*/
-void startServoTimer();
-void writeServo(int);
+// Wire Functions
+  void WireWrite(int, int);
+  uint8_t* WireRead(int, int);
 
-/*
- * high-level move functions
-*/ 
+// Compass
+  float compass();
+
+// Magnetometer
+  float readMag();
+  float xAxisMag;
+  float zAxisMag;
+  float yAxisMag;  
+  float magX();
+  float magY();
+  float magZ();
+
+// Accelerometer
+  int accelGood;
+  float xAxisAccel;
+  float zAxisAccel;
+  float yAxisAccel;  
+  float accelX();
+  float accelY();
+  float accelZ();
+  
+  void readAccelData();
+  int initAccelerometer();
+ 
+// I2C functions 
+  void readi2cRegisters(uint8_t, int, uint8_t *, uint8_t);
+  uint8_t readi2cRegister(uint8_t, uint8_t);
+  void readi2cRegister(unsigned char, unsigned char, uint8_t);
+
+// Servo Functions
+  void startServoTimer();
+  void servo(int);
+  int8_t servo_deg_offset;
+
+// high-level move functions
   void moveForward(float);
   void moveForward();
   
@@ -224,36 +274,24 @@ void writeServo(int);
   
   void moveStop();
    
-  void gripOpen();
-  void gripClose();
-  void gripStop();
+  void gripperOpen();
+  void gripperClose();
+  void gripperStop();
 
-/*
- * individual motor control (non-blocking)
- * speed range is percent 0-100
-*/ 
+// individual motor control (non-blocking)
+// speed range is percent 0-100
   void motorRotate( int motor, int direction,  int speed);
   void motorStop(int motor);
 
-
-/*
- * combined motor control using step count
- * this function blocks by default but returns after starting motors if wait = false
- */
+// combined motor control using step count
+// this function blocks by default but returns after starting motors if wait = false
   void motorsRotateSteps( int leftDir, int rightDir,  int speed, uint32_t steps, bool wait= true);
  
-/*
- * returns true if one or both motors a still stepping
- */
- bool areMotorsRunning();
+// returns true if one or both motors a still stepping
+  bool areMotorsRunning();
    
- void onGrabIR();
- void offGrabIR();
-   
- void onIR();
- void offIR();
-
-
+  void onIR();
+  void offIR();
 
 // Display Functions
   void st7565_init(void);
@@ -262,34 +300,40 @@ void writeServo(int);
   void st7565_data(uint8_t c);
   void st7565_set_brightness(uint8_t val);
   void clear_display(void);
-  void clear();
-  void display();
+  
+  void clearLCD();
+  void updateLCD();
+  
+  void moveUpLine();
+  
+  uint8_t readPixel(uint8_t x, uint8_t y);
+  
+  void textWrite(const char* buffer, uint16_t len=0);
 
-  void setpixel(uint8_t x, uint8_t y, uint8_t color);
-  uint8_t getpixel(uint8_t x, uint8_t y);
-  void fillcircle(uint8_t x0, uint8_t y0, uint8_t r, 
-		  uint8_t color);
-  void drawcircle(uint8_t x0, uint8_t y0, uint8_t r, 
-		  uint8_t color);
-  void drawrect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, 
-		uint8_t color);
-  void fillrect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, 
-		uint8_t color);
-  void drawline(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, 
-		uint8_t color);
-  void drawchar(uint8_t x, uint8_t line, char c);
-  void drawstring(uint8_t x, uint8_t line, char *c);
-  void drawstring_P(uint8_t x, uint8_t line, const char *c);
-
-  void drawbitmap(uint8_t x, uint8_t y, 
-		  const uint8_t *bitmap, uint8_t w, uint8_t h,
-		  uint8_t color);
-
+  /* Play nice with Arduino's Print class */
+  virtual size_t write(uint8_t b) {
+    textWrite((const char *)&b, 1);
+    return 1;
+  }
+  virtual size_t write(const uint8_t *buffer, size_t size) {
+    textWrite((const char *)buffer, size);
+    return size;
+  }
+  
+  void drawPixel(uint8_t x, uint8_t y, uint8_t color);  
+  void drawCircleFilled(uint8_t x0, uint8_t y0, uint8_t r);
+  void drawCircle(uint8_t x0, uint8_t y0, uint8_t r);
+  void drawRect(uint8_t x, uint8_t y, uint8_t w, uint8_t h);
+  void drawRectFilled(uint8_t x, uint8_t y, uint8_t w, uint8_t h);
+  void drawLine(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1);
+  void drawChar(uint8_t x, uint8_t line, char c);
+  void drawString(uint8_t x, uint8_t line, char *c);
+  void drawString_P(uint8_t x, uint8_t line, const char *c);
+  void drawBitmap(uint8_t x, uint8_t y, 
+		  const uint8_t *bitmap, uint8_t w, uint8_t h);
 
 private:   
-  
-  byte stepIndex[2];   
-  
+  uint8_t stepIndex[2];   
   
   void setSteps(uint8_t motor, uint32_t steps);  // sets the number of remaining steps, motor stops when this is 0
   uint32_t getSteps(uint8_t motor ); // returns the number of remaining steps
@@ -302,7 +346,7 @@ private:
   void my_setpixel(uint8_t x, uint8_t y, uint8_t color);
 };
 
-extern SparkiClass Sparki;
+extern SparkiClass sparki;
 
 #endif
 

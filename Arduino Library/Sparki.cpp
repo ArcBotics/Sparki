@@ -3,15 +3,16 @@
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
-#include "Arduino.h"
-
+#include <Arduino.h>
 
 #include <avr/pgmspace.h>
 #include <util/delay.h>
 #include <stdlib.h>
 #include <SPI.h>
 
-//#include "SPI.h"
+#include "SparkiWire.h"
+#include "SparkiEEPROM.h"
+#include "Sparkii2c.h"
 
 static int8_t step_dir[3];                 // -1 = ccw, 1 = cw  
 static volatile uint8_t speed_index[3];     // counter controlling motor speed 
@@ -42,26 +43,31 @@ volatile uint16_t pulsesIR[50][2]; // LOW,HIGH
 volatile uint8_t currentPulse = 0;
 volatile uint8_t haltIRRead = 0;
 
-// keeps track of what's being outputted to the shift registers
+// shares the values of the accelerometers
+volatile float xAxisAccel;
+volatile float yAxisAccel;
+volatile float zAxisAccel;
 
+// values for the servo
+volatile int8_t servo_deg_offset = 0;
+
+SparkiClass sparki;
 
 //static volatile int speedCounter;
 
 SparkiClass::SparkiClass()
 {
- //begin();
+ begin();
 }
 
 void SparkiClass::begin( ) {
+ 
   Serial.begin(9600);
+  Serial1.begin(9600);
 
   // set up the Status LED
   pinMode(STATUS_LED, OUTPUT);
   digitalWrite(STATUS_LED, LOW);
-
-  // set up Servo
-  pinMode(SERVO,OUTPUT);
-  digitalWrite(SERVO, LOW);
 
   // Setup Buzzer
   pinMode(BUZZER, OUTPUT);
@@ -82,9 +88,16 @@ void SparkiClass::begin( ) {
   
   // Setup Servo
   pinMode(SERVO, OUTPUT);    
-  startServoTimer();
-  writeServo(SERVO_CENTER);
-
+  //startServoTimer();
+  if( EEPROM.read(0) > 127) {
+    servo_deg_offset = -256+EEPROM.read(0);
+  }
+  else{
+    servo_deg_offset = EEPROM.read(0);
+  }
+  //servo(SERVO_CENTER);
+    
+  
   // Setup the SPI bus for the shift register
   // !!! Need to remove the essential functions from the SPI Library, 
   // !!! and include in the main code
@@ -126,10 +139,12 @@ void SparkiClass::begin( ) {
   _steps_right[8] = 0x00;
 
   beginDisplay();
-  display();
+  updateLCD();
 
   // Setup initial Stepper settings
   motor_speed[MOTOR_LEFT] = motor_speed[MOTOR_RIGHT] = motor_speed[MOTOR_GRIPPER] =100;
+  
+  
   
   // Set up the scheduler routine to run every 100uS, based off Timer4 interrupt
   cli();          // disable all interrupts
@@ -140,7 +155,7 @@ void SparkiClass::begin( ) {
   OCR4A = 48;               // compare match register 16MHz/32/10000Hz
   TCCR4B |= (1 << WGM12);   // CTC mode
   TCCR4B = 0x06;            // CLK/32 prescaler (32 = 2^(0110-1))
-  TIMSK4 |= (1 << OCIE4A);  // enable timer compare interrupt
+  TIMSK4 |= (1 << OCIE4A);  // enable Timer4 compare interrupt A
   sei();             // enable all interrupts
   
   // Setup the IR Remote Control pin and pin interrupt
@@ -150,7 +165,15 @@ void SparkiClass::begin( ) {
   // Setup the pin interrupt for INT6 (Pin 7) to trigger the IR function
   EICRB = (EICRB & ~((1 << ISC60) | (1 << ISC61))) | (CHANGE << ISC60);
   EIMSK |= (1 << INT6); 
+  
   interrupts();
+  
+  initAccelerometer();
+  
+   WireWrite(ConfigurationRegisterB, (0x01 << 5));
+   WireWrite(ModeRegister, Measurement_Continuous);  
+  readMag(); // warm it up  
+
 }
 
 void SparkiClass::setMux(uint8_t A, uint8_t B, uint8_t C){
@@ -217,14 +240,54 @@ int SparkiClass::readSensorIR(int pin){
 	return read;
 }
 
-void SparkiClass::beep(){
-  for(short i=0; i<300; i++){
-      digitalWrite(BUZZER, HIGH);
-      delayMicroseconds(300);
-      digitalWrite(BUZZER, LOW);
-      delayMicroseconds(300);
-    }
+void SparkiClass::onIR()  // turns off the IR Detection LEDs
+{
+    irSwitch = 1;
+    delay(1); // give time for a scheduler cycle to run
 }
+
+void SparkiClass::offIR() // turns off the IR Detection LEDs
+{
+    irSwitch = 0;
+    delay(1); // give time for a scheduler cycle to run
+}
+
+int SparkiClass::readBlindSensorIR(int pin0, int pin1, int pin2){
+    int read = 0;
+    setMux(pin0, pin1, pin2);
+    delay(1);
+	read = analogRead(MUX_ANALOG);
+	delay(1);
+	return read;
+}
+
+int SparkiClass::diffIR(int pin0, int pin1, int pin2){
+    setMux(pin0, pin1, pin2);
+    delay(1);
+	int readOff = analogRead(MUX_ANALOG);
+	delay(10);
+	onIR();
+	int readOn = analogRead(MUX_ANALOG);
+	offIR();
+	return readOff-readOn;
+}
+
+void SparkiClass::beep(){
+    tone(BUZZER, 4000, 200);
+}
+
+void SparkiClass::beep(int freq){
+    tone(BUZZER, freq, 200);
+}
+
+void SparkiClass::beep(int freq, int time){
+    tone(BUZZER, freq, time);
+}
+
+void SparkiClass::noBeep(){
+    noTone(BUZZER);
+}
+
 
 /*
  * motor control (non-blocking, except when moving distances)
@@ -237,7 +300,6 @@ void SparkiClass::RGB(uint8_t R, uint8_t G, uint8_t B)
 	RGB_vals[1] = G;
 	RGB_vals[2] = B;
 }
-
 
 void SparkiClass::moveRight(float deg)
 {
@@ -304,15 +366,15 @@ void SparkiClass::moveStop()
   motorStop(MOTOR_RIGHT);
 }
 
-void SparkiClass::gripOpen()
+void SparkiClass::gripperOpen()
 {
   motorRotate(MOTOR_GRIPPER, DIR_CCW, 100);
 }
-void SparkiClass::gripClose()
+void SparkiClass::gripperClose()
 {
   motorRotate(MOTOR_GRIPPER, DIR_CW, 100);
 }
-void SparkiClass::gripStop()
+void SparkiClass::gripperStop()
 {
   motorStop(MOTOR_GRIPPER);
 }
@@ -462,9 +524,10 @@ void SparkiClass::startServoTimer(){
   SREG = oldSREG;
 }
 
-void SparkiClass::writeServo(int deg)
-{
-  int duty = int((((float(deg)*2000/180)+1500)/20000)*1024); // compute the duty cycle for the servo
+void SparkiClass::servo(int deg)
+{ 
+  startServoTimer();
+  int duty = int((((float(-deg+servo_deg_offset)*2000/180)+1500)/20000)*1024); // compute the duty cycle for the servo
   //0 = 26
   //180 = 128
   
@@ -515,8 +578,6 @@ int SparkiClass::readIR(){
     }
 }
 
-// Watches the IR Receive pin (INT6, PE6, Pin 7) for a change, stores the variables
-// for readIR to process
 SIGNAL(INT6_vect) {
   if(haltIRRead != 1){
       long currentTime = micros(); // take the current time
@@ -542,16 +603,110 @@ SIGNAL(INT6_vect) {
   }
 }
 
-void SparkiClass::onIR()  // turns off the IR Detection LEDs
-{
-    irSwitch = 1;
-    delay(1); // give time for a scheduler cycle to run
+// setups up timer to pulse 38khz on and off in a pre-described sequence according to NEC
+// protocol
+// http://wiki.altium.com/display/ADOH/NEC+Infrared+Transmission+Protocol
+
+void SparkiClass::sendIR(uint8_t code){
+    // setup PD7 (6) to 38khz on pin  using TIMER4 COMPD
+
+  
+  OCR4D = 13;               // compare match register 16MHz/32/38000Hz
+  TCCR4D |= (1 << WGM12);   // CTC mode
+  TCCR4D = 0x06;            // CLK/32 prescaler (32 = 2^(0110-1))
+  TIMSK4 |= (1 << OCIE4D);  // enable Timer4 compare interrupt D - need to switch to PWM
+  
+  
+    
+    // go through each bit in byte, pulse appropriate IR
+    //leading pulse Xms on, Yms off
+    
+    //leading pulse of all 0
+    for(uint8_t bit = 0; bit < 8; bit++){ // for each bit in the byte
+        if(code & (1<<bit) > 0){ // determine if bit is 1
+            // bit==1: pulse for Xms on, off for Yms
+        }
+        else{
+            // bit==0: pulse for Xms on, off for Yms
+        }
+    }
+    // re-establish output on Timer 4 for 10khz control loop
 }
 
-void SparkiClass::offIR() // turns off the IR Detection LEDs
-{
-    irSwitch = 0;
-    delay(1); // give time for a scheduler cycle to run
+float SparkiClass::accelX(){
+    readAccelData();
+    return -xAxisAccel*9.8;
+}
+float SparkiClass::accelY(){
+    readAccelData();
+    return -yAxisAccel*9.8;
+}
+float SparkiClass::accelZ(){
+    readAccelData();
+    return -zAxisAccel*9.8;
+}
+
+float SparkiClass::readMag(){
+  uint8_t* buffer = WireRead(DataRegisterBegin, RawMagDataLength);
+  xAxisMag = ((buffer[0] << 8) | buffer[1]) * M_SCALE;
+  zAxisMag = ((buffer[2] << 8) | buffer[3]) * M_SCALE;
+  yAxisMag = ((buffer[4] << 8) | buffer[5]) * M_SCALE;    
+}
+
+float SparkiClass::compass(){
+  readMag();
+  
+  float heading = atan2(yAxisMag,xAxisMag);
+  
+  if(heading < 0)
+    heading += 2*PI;
+  if(heading > 2*PI)
+    heading -= 2*PI;
+    
+  float headingDegrees = heading * 180/M_PI; 
+  return headingDegrees;
+}
+
+float SparkiClass::magX(){
+    readMag();
+    return xAxisMag;
+}
+
+float SparkiClass::magY(){
+    readMag();
+    return yAxisMag;
+}
+
+float SparkiClass::magZ(){
+    readMag();
+    return zAxisMag;
+}
+
+void SparkiClass::WireWrite(int address, int data){
+  Wire.beginTransmission(HMC5883L_Address);
+  Wire.write(address);
+  Wire.write(data);
+  Wire.endTransmission();
+}
+
+uint8_t* SparkiClass::WireRead(int address, int length){
+  Wire.beginTransmission(HMC5883L_Address);
+  Wire.write(DataRegisterBegin);
+  Wire.endTransmission();
+  
+  Wire.beginTransmission(HMC5883L_Address);
+  Wire.requestFrom(HMC5883L_Address, RawMagDataLength);
+
+  uint8_t buffer[RawMagDataLength];
+  if(Wire.available() == RawMagDataLength)
+  {
+	  for(uint8_t i = 0; i < RawMagDataLength; i++)
+	  {
+		  buffer[i] = Wire.read();
+	  }
+  }
+  Wire.endTransmission();
+  return buffer;
 }
 
  /*
@@ -607,7 +762,7 @@ ISR(TIMER4_COMPA_vect)          // interrupt service routine that wraps a user d
 		shift_outputs[RGB_SHIFT] |= RGB_B;
     }
     RGB_timer++;
-    if(RGB_timer == 256){
+    if(RGB_timer == 100){
     	RGB_timer = 0;
     }
 
@@ -1031,13 +1186,12 @@ static void updateBoundingBox(uint8_t xmin, uint8_t ymin, uint8_t xmax, uint8_t 
 #endif
 }
 
-void SparkiClass::drawbitmap(uint8_t x, uint8_t y, 
-			const uint8_t *bitmap, uint8_t w, uint8_t h,
-			uint8_t color) {
+void SparkiClass::drawBitmap(uint8_t x, uint8_t y, 
+			const uint8_t *bitmap, uint8_t w, uint8_t h) {
   for (uint8_t j=0; j<h; j++) {
     for (uint8_t i=0; i<w; i++ ) {
       if (pgm_read_byte(bitmap + i + (j/8)*w) & _BV(j%8)) {
-	my_setpixel(x+i, y+j, color);
+	my_setpixel(x+i, y+j, WHITE);
       }
     }
   }
@@ -1045,27 +1199,63 @@ void SparkiClass::drawbitmap(uint8_t x, uint8_t y,
   updateBoundingBox(x, y, x+w, y+h);
 }
 
-void SparkiClass::drawstring(uint8_t x, uint8_t line, char *c) {
+void SparkiClass::moveUpLine() {
+    memmove(st7565_buffer, st7565_buffer+128, 1024-128);
+    memset(st7565_buffer+1024-128,0,128);
+    updateBoundingBox(0, 0, LCDWIDTH-1, LCDHEIGHT-1);
+}
+
+uint8_t print_char_x = 0;
+uint8_t print_line_y = 0;
+
+void SparkiClass::textWrite(const char* buffer, uint16_t len) {
+  for (uint16_t i=0;i<len;i++){
+    if(buffer[i] == '\n'){
+      print_line_y++;
+      print_char_x=0;
+    }
+    else{
+        if(buffer[i] != '\r'){
+            drawChar(print_char_x, print_line_y, buffer[i]);
+            print_char_x += 6; // 6 pixels wide
+            if (print_char_x + 6 >= LCDWIDTH) {
+              print_char_x = 0;    // ran out of this line
+              print_line_y++;
+            }
+        }
+    }
+
+    if (print_line_y >= (LCDHEIGHT/8)) {
+      moveUpLine();
+      print_line_y--;
+    }
+  }
+}
+
+
+
+void SparkiClass::drawString(uint8_t x, uint8_t line, char *c) {
   while (c[0] != 0) {
-    drawchar(x, line, c[0]);
+    drawChar(x, line, c[0]);
     c++;
     x += 6; // 6 pixels wide
     if (x + 6 >= LCDWIDTH) {
       x = 0;    // ran out of this line
       line++;
     }
-    if (line >= (LCDHEIGHT/8))
-      return;        // ran out of space :(
+    if (line >= (LCDHEIGHT/8)) {
+      moveUpLine();
+      line--;
+    }
   }
 }
 
-
-void SparkiClass::drawstring_P(uint8_t x, uint8_t line, const char *str) {
+void SparkiClass::drawString_P(uint8_t x, uint8_t line, const char *str) {
   while (1) {
     char c = pgm_read_byte(str++);
     if (! c)
       return;
-    drawchar(x, line, c);
+    drawChar(x, line, c);
     x += 6; // 6 pixels wide
     if (x + 6 >= LCDWIDTH) {
       x = 0;    // ran out of this line
@@ -1076,7 +1266,7 @@ void SparkiClass::drawstring_P(uint8_t x, uint8_t line, const char *str) {
   }
 }
 
-void  SparkiClass::drawchar(uint8_t x, uint8_t line, char c) {
+void  SparkiClass::drawChar(uint8_t x, uint8_t line, char c) {
   for (uint8_t i =0; i<5; i++ ) {
     st7565_buffer[x + (line*128) ] = pgm_read_byte(font+(c*5)+i);
     x++;
@@ -1086,8 +1276,7 @@ void  SparkiClass::drawchar(uint8_t x, uint8_t line, char c) {
 }
 
 // bresenham's algorithm - thx wikpedia
-void SparkiClass::drawline(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, 
-		      uint8_t color) {
+void SparkiClass::drawLine(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1) {
   uint8_t steep = abs(y1 - y0) > abs(x1 - x0);
   if (steep) {
     swap(x0, y0);
@@ -1116,9 +1305,9 @@ void SparkiClass::drawline(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1,
 
   for (; x0<=x1; x0++) {
     if (steep) {
-      my_setpixel(y0, x0, color);
+      my_setpixel(y0, x0, WHITE);
     } else {
-      my_setpixel(x0, y0, color);
+      my_setpixel(x0, y0, WHITE);
     }
     err -= dy;
     if (err < 0) {
@@ -1129,13 +1318,12 @@ void SparkiClass::drawline(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1,
 }
 
 // filled rectangle
-void SparkiClass::fillrect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, 
-		      uint8_t color) {
+void SparkiClass::drawRectFilled(uint8_t x, uint8_t y, uint8_t w, uint8_t h) {
 
   // stupidest version - just pixels - but fast with internal buffer!
   for (uint8_t i=x; i<x+w; i++) {
     for (uint8_t j=y; j<y+h; j++) {
-      my_setpixel(i, j, color);
+      my_setpixel(i, j, WHITE);
     }
   }
 
@@ -1143,24 +1331,22 @@ void SparkiClass::fillrect(uint8_t x, uint8_t y, uint8_t w, uint8_t h,
 }
 
 // draw a rectangle
-void SparkiClass::drawrect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, 
-		      uint8_t color) {
+void SparkiClass::drawRect(uint8_t x, uint8_t y, uint8_t w, uint8_t h) {
   // stupidest version - just pixels - but fast with internal buffer!
   for (uint8_t i=x; i<x+w; i++) {
-    my_setpixel(i, y, color);
-    my_setpixel(i, y+h-1, color);
+    my_setpixel(i, y, WHITE);
+    my_setpixel(i, y+h-1, WHITE);
   }
   for (uint8_t i=y; i<y+h; i++) {
-    my_setpixel(x, i, color);
-    my_setpixel(x+w-1, i, color);
+    my_setpixel(x, i, WHITE);
+    my_setpixel(x+w-1, i, WHITE);
   } 
 
   updateBoundingBox(x, y, x+w, y+h);
 }
 
 // draw a circle outline
-void SparkiClass::drawcircle(uint8_t x0, uint8_t y0, uint8_t r, 
-			uint8_t color) {
+void SparkiClass::drawCircle(uint8_t x0, uint8_t y0, uint8_t r) {
   updateBoundingBox(x0-r, y0-r, x0+r, y0+r);
 
   int8_t f = 1 - r;
@@ -1169,10 +1355,10 @@ void SparkiClass::drawcircle(uint8_t x0, uint8_t y0, uint8_t r,
   int8_t x = 0;
   int8_t y = r;
 
-  my_setpixel(x0, y0+r, color);
-  my_setpixel(x0, y0-r, color);
-  my_setpixel(x0+r, y0, color);
-  my_setpixel(x0-r, y0, color);
+  my_setpixel(x0, y0+r, WHITE);
+  my_setpixel(x0, y0-r, WHITE);
+  my_setpixel(x0+r, y0, WHITE);
+  my_setpixel(x0-r, y0, WHITE);
 
   while (x<y) {
     if (f >= 0) {
@@ -1184,24 +1370,20 @@ void SparkiClass::drawcircle(uint8_t x0, uint8_t y0, uint8_t r,
     ddF_x += 2;
     f += ddF_x;
   
-    my_setpixel(x0 + x, y0 + y, color);
-    my_setpixel(x0 - x, y0 + y, color);
-    my_setpixel(x0 + x, y0 - y, color);
-    my_setpixel(x0 - x, y0 - y, color);
+    my_setpixel(x0 + x, y0 + y, WHITE);
+    my_setpixel(x0 - x, y0 + y, WHITE);
+    my_setpixel(x0 + x, y0 - y, WHITE);
+    my_setpixel(x0 - x, y0 - y, WHITE);
     
-    my_setpixel(x0 + y, y0 + x, color);
-    my_setpixel(x0 - y, y0 + x, color);
-    my_setpixel(x0 + y, y0 - x, color);
-    my_setpixel(x0 - y, y0 - x, color);
+    my_setpixel(x0 + y, y0 + x, WHITE);
+    my_setpixel(x0 - y, y0 + x, WHITE);
+    my_setpixel(x0 + y, y0 - x, WHITE);
+    my_setpixel(x0 - y, y0 - x, WHITE);
     
   }
-
-
-
 }
 
-void SparkiClass::fillcircle(uint8_t x0, uint8_t y0, uint8_t r, 
-			uint8_t color) {
+void SparkiClass::drawCircleFilled(uint8_t x0, uint8_t y0, uint8_t r) {
   updateBoundingBox(x0-r, y0-r, x0+r, y0+r);
 
   int8_t f = 1 - r;
@@ -1211,7 +1393,7 @@ void SparkiClass::fillcircle(uint8_t x0, uint8_t y0, uint8_t r,
   int8_t y = r;
 
   for (uint8_t i=y0-r; i<=y0+r; i++) {
-    my_setpixel(x0, i, color);
+    my_setpixel(x0, i, WHITE);
   }
 
   while (x<y) {
@@ -1225,12 +1407,12 @@ void SparkiClass::fillcircle(uint8_t x0, uint8_t y0, uint8_t r,
     f += ddF_x;
   
     for (uint8_t i=y0-y; i<=y0+y; i++) {
-      my_setpixel(x0+x, i, color);
-      my_setpixel(x0-x, i, color);
+      my_setpixel(x0+x, i, WHITE);
+      my_setpixel(x0-x, i, WHITE);
     } 
     for (uint8_t i=y0-x; i<=y0+x; i++) {
-      my_setpixel(x0+y, i, color);
-      my_setpixel(x0-y, i, color);
+      my_setpixel(x0+y, i, WHITE);
+      my_setpixel(x0-y, i, WHITE);
     }    
   }
 }
@@ -1247,7 +1429,7 @@ void SparkiClass::my_setpixel(uint8_t x, uint8_t y, uint8_t color) {
 }
 
 // the most basic function, set a single pixel
-void SparkiClass::setpixel(uint8_t x, uint8_t y, uint8_t color) {
+void SparkiClass::drawPixel(uint8_t x, uint8_t y, uint8_t color) {
   if ((x >= LCDWIDTH) || (y >= LCDHEIGHT))
     return;
 
@@ -1262,7 +1444,7 @@ void SparkiClass::setpixel(uint8_t x, uint8_t y, uint8_t color) {
 
 
 // the most basic function, get a single pixel
-uint8_t SparkiClass::getpixel(uint8_t x, uint8_t y) {
+uint8_t SparkiClass::readPixel(uint8_t x, uint8_t y) {
   if ((x >= LCDWIDTH) || (y >= LCDHEIGHT))
     return 0;
 
@@ -1378,7 +1560,7 @@ void SparkiClass::st7565_set_brightness(uint8_t val) {
 }
 
 
-void SparkiClass::display(void) {
+void SparkiClass::updateLCD(void) {
   uint8_t col, maxcol, p;
 
   /*
@@ -1404,7 +1586,7 @@ void SparkiClass::display(void) {
     }
 #endif
 
-    st7565_command(CMD_SET_PAGE | pagemap[p]);
+     st7565_command(CMD_SET_PAGE | pagemap[p]);
 
 
 #ifdef enablePartialUpdate
@@ -1436,7 +1618,9 @@ void SparkiClass::display(void) {
 }
 
 // clear everything
-void SparkiClass::clear(void) {
+void SparkiClass::clearLCD(void) {
+  print_char_x = 0;
+  print_line_y = 0;
   memset(st7565_buffer, 0, 1024);
   updateBoundingBox(0, 0, LCDWIDTH-1, LCDHEIGHT-1);
 }
@@ -1462,4 +1646,133 @@ void SparkiClass::clear_display(void) {
       st7565_data(0x0);
     }     
   }
+}
+
+
+void SparkiClass::readAccelData()
+{
+  int accelCount[3];
+  uint8_t rawData[6];  // x/y/z accel register data stored here
+  
+  
+  readi2cRegisters(0x01, 6, &rawData[0], MMA8452_ADDRESS);  // Read the six raw data registers into data array
+  
+
+  // Loop to calculate 12-bit ADC and g value for each axis
+  for (uint8_t i=0; i<6; i+=2)
+  {
+    accelCount[i/2] = ((rawData[i] << 8) | rawData[i+1]) >> 4;  // Turn the MSB and LSB into a 12-bit value
+    if (rawData[i] > 0x7F)
+    {  
+      // If the number is negative, we have to make it so manually (no 12-bit data type)
+      accelCount[i/2] = ~accelCount[i/2] + 1;
+      accelCount[i/2] *= -1;  // Transform into negative 2's complement #
+    }
+  }
+  xAxisAccel = (float) accelCount[0]/((1<<12)/(2*ACCEL_SCALE));
+  yAxisAccel = (float) accelCount[1]/((1<<12)/(2*ACCEL_SCALE));
+  zAxisAccel = (float) accelCount[2]/((1<<12)/(2*ACCEL_SCALE));
+}
+
+int SparkiClass::initAccelerometer()
+{
+  uint8_t c = readi2cRegister(0x0D, MMA8452_ADDRESS);  // Read WHO_AM_I register
+  if (c == 0x2A){ // WHO_AM_I should always be 0x2
+    // Must be in standby to change registers, so we do that
+    c = readi2cRegister(0x2A, MMA8452_ADDRESS);
+    readi2cRegister(0x2A, c & ~(0x01), MMA8452_ADDRESS);
+  
+    // Set up the full scale range
+    readi2cRegister(0x0E, ACCEL_SCALE >> 2, MMA8452_ADDRESS); 
+  
+    // Setup the 3 data rate bits, from 0 to 7
+    readi2cRegister(0x2A, readi2cRegister(0x2A, MMA8452_ADDRESS) & ~(0x38), MMA8452_ADDRESS);
+    if (ACCEL_DATARATE <= 7)
+      readi2cRegister(0x2A, readi2cRegister(0x2A, MMA8452_ADDRESS) | (ACCEL_DATARATE << 3), MMA8452_ADDRESS);  
+  
+    // Set back to active mode to start reading
+    c = readi2cRegister(0x2A, MMA8452_ADDRESS);
+    readi2cRegister(0x2A, c | 0x01, MMA8452_ADDRESS);
+    return 1;
+  }
+  else{
+    return -1;
+  }
+}
+
+// Read i registers sequentially, starting at address into the dest byte array
+void SparkiClass::readi2cRegisters(byte address, int i, byte * dest, uint8_t i2cAddress)
+{
+  i2cSendStart();
+  i2cWaitForComplete();
+
+  i2cSendByte((i2cAddress<<1)); // write 0xB4
+  i2cWaitForComplete();
+
+  i2cSendByte(address);	// write register address
+  i2cWaitForComplete();
+
+  i2cSendStart();
+  i2cSendByte((i2cAddress<<1)|0x01); // write 0xB5
+  i2cWaitForComplete();
+  for (int j=0; j<i; j++)
+  {
+    i2cReceiveByte(-1); // -1 = True
+    i2cWaitForComplete();
+    dest[j] = i2cGetReceivedByte(); // Get MSB result
+  }
+  i2cWaitForComplete();
+  i2cSendStop();
+
+  cbi(TWCR, TWEN); // Disable TWI
+  sbi(TWCR, TWEN); // Enable TWI
+}
+
+// Read a single byte from address and return it as a byte
+byte SparkiClass::readi2cRegister(uint8_t address, uint8_t i2cAddress)
+{
+  byte data;
+  
+  i2cSendStart();
+  i2cWaitForComplete();
+  
+  i2cSendByte((i2cAddress<<1)); // Write 0xB4
+  i2cWaitForComplete();
+  
+  i2cSendByte(address);	// Write register address
+  i2cWaitForComplete();
+  
+  i2cSendStart();
+  
+  i2cSendByte((i2cAddress<<1)|0x01); // Write 0xB5
+  i2cWaitForComplete();
+  i2cReceiveByte(-1); // -1 = True
+  i2cWaitForComplete();
+  
+  data = i2cGetReceivedByte();	// Get MSB result
+  i2cWaitForComplete();
+  i2cSendStop();
+  
+  cbi(TWCR, TWEN);	// Disable TWI
+  sbi(TWCR, TWEN);	// Enable TWI
+  
+  return data;
+}
+
+// Writes a single byte (data) into address
+void SparkiClass::readi2cRegister(unsigned char address, unsigned char data, uint8_t i2cAddress)
+{
+  i2cSendStart();
+  i2cWaitForComplete();
+
+  i2cSendByte((i2cAddress<<1)); // Write 0xB4
+  i2cWaitForComplete();
+
+  i2cSendByte(address);	// Write register address
+  i2cWaitForComplete();
+
+  i2cSendByte(data);
+  i2cWaitForComplete();
+
+  i2cSendStop();
 }
