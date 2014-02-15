@@ -19,7 +19,7 @@ void loop()
       }
       if ( y > 0 ) // if sparki is facing downhill
       {
-        sparki.moveBackwards();
+        sparki.moveBackward();
       }      
     }
     else{ // if Sparki is not facing uphill or downhill, have Sparki turn until it is
