@@ -304,9 +304,14 @@ void SparkiClass::RGB(uint8_t R, uint8_t G, uint8_t B)
 void SparkiClass::moveRight(float deg)
 {
   float turn = 21.388888*deg;
-  moveRight();
-  delay(long(turn));
-  moveStop();
+  if( (deg == -1) || (deg == 0) ){
+      moveRight();
+  }
+  else{
+      moveLeft();
+      delay(long(turn));
+      moveStop();
+  }
 }
 
 void SparkiClass::moveRight()
@@ -319,9 +324,14 @@ void SparkiClass::moveRight()
 void SparkiClass::moveLeft(float deg)
 {
   float turn = 21.388888*deg;
-  moveLeft();
-  delay(long(turn));
-  moveStop();
+  if( (deg == -1) || (deg == 0) ){
+      moveLeft();
+  }
+  else{
+      moveLeft();
+      delay(long(turn));
+      moveStop();
+  }
 }
 
 void SparkiClass::moveLeft()
@@ -334,9 +344,14 @@ void SparkiClass::moveLeft()
 void SparkiClass::moveForward(float cm)
 {
   float run = 222.222222*cm;
-  moveForward();
-  delay(run);
-  moveStop();
+  if( (cm == -1) || (cm == 0) ){
+      moveForward();
+  }
+  else{
+      moveForward();
+      delay(run);
+      moveStop();
+  }
 }
 
 void SparkiClass::moveForward()
@@ -349,9 +364,14 @@ void SparkiClass::moveForward()
 void SparkiClass::moveBackward(float cm)
 {
   float run = 222.222222*cm;
-  moveBackward();
-  delay(run);
-  moveStop();
+  if( (cm == -1) || (cm == 0) ){
+      moveBackward();
+  }
+  else{
+      moveBackward();
+      delay(run);
+      moveStop();
+  }
 }
 
 void SparkiClass::moveBackward()
@@ -391,6 +411,7 @@ void SparkiClass::motorRotate(int motor, int direction,  int speed)
    speedCount[motor] = int(100.0/float(motor_speed[motor])*10.0);
    speedCounter[motor] = speedCount[motor];
    SREG = oldSREG; 
+   sei();
    delay(10);
 }
 
