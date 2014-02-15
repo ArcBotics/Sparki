@@ -433,12 +433,14 @@ void SparkiClass::motorsRotateSteps( int leftDir, int rightDir,  int speed, uint
   isRunning[MOTOR_LEFT] = isRunning[MOTOR_RIGHT] = true;
 
   SREG = oldSREG; 
+  sei();
   if( wait)
   {
     while ( areMotorsRunning() ){
       delay(10);  // remainingSteps is decrimented in the timer callback     
     }
   }  
+ 
 }
  
  // returns true if one or both motors a still stepping
