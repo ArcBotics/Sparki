@@ -26,7 +26,22 @@ void loop() {
   {
     sparki.moveForward(); // move forward
   }  
+
+  sparki.clearLCD(); // wipe the screen
+  sparki.println();
   
+  sparki.print("Line Left: "); // show left line sensor on screen
+  sparki.println(lineLeft);
+  
+  sparki.print("Line Center: "); // show center line sensor on screen
+  sparki.println(lineCenter);
+  
+  sparki.print("Line Right: "); // show right line sensor on screen
+  sparki.println(lineRight);
+  
+  sparki.println();
+  sparki.updateLCD(); // display all of the information written to the screen
+
   delay(100); // wait 0.1 seconds
 }
 
