@@ -24,7 +24,7 @@ void loop() {
   // if the center line sensor is the only one reading a line
   if ( (lineCenter > threshold) && (lineLeft < threshold) && (lineRight < threshold) )
   {
-    sparki.moveRight(); // move forward
+    sparki.moveForward(); // move forward
   }  
   
   delay(100); // wait 0.1 seconds
