@@ -19,7 +19,7 @@ void loop() {
   int edgeLeft   = sparki.edgeLeft();   // measure the left edge IR sensor
   int edgeRight  = sparki.edgeRight();  // measure the right edge IR sensor
   
-  int threshold = 500; // if below this value, no surface underneath
+  int threshold = 200; // if below this value, no surface underneath
   
   if (edgeLeft < threshold) // if no surface underneath left sensor
   {
