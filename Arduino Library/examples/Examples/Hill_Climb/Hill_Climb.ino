@@ -13,7 +13,7 @@ void loop()
     // is Sparki already facing downhill or uphill?
     if ( (x < 1) && (x > -1) )
     {
-      if ( y > 0 ) // if sparki is facing uphill
+      if ( y < 0 ) // if sparki is facing uphill
       {
         sparki.moveForward();
       }
