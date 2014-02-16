@@ -408,7 +408,7 @@ void SparkiClass::motorRotate(int motor, int direction,  int speed)
    step_dir[motor] = direction;  
    remainingSteps[motor] = ULONG_MAX; // motor stops after this many steps, almost 50 days of stepping if motor not stopped
    isRunning[motor] = true;
-   speedCount[motor] = int(100.0/float(motor_speed[motor])*10.0);
+   speedCount[motor] = int(100.0/float(motor_speed[motor])*5.0);
    speedCounter[motor] = speedCount[motor];
    SREG = oldSREG; 
    sei();
