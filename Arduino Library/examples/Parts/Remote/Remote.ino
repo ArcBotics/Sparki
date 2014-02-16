@@ -50,18 +50,18 @@ void loop()
   case 7:  sparki.gripperClose(); break;
 
   // buzzer
-  case 13:  sparki.beep(); break;
+  case 74: sparki.beep(); break;
 
   // Servo Buttons
-  case 12:  sparki.servo(SERVO_LEFT); break;
-  case 24:  sparki.servo(SERVO_CENTER); break;
-  case 94:  sparki.servo(SERVO_RIGHT); break;
+  case 90: sparki.servo(SERVO_LEFT); break;
+  case 28: sparki.servo(SERVO_CENTER); break;
+  case 8: sparki.servo(SERVO_RIGHT); break;
 
   // RGB LED
-  case 90:  sparki.RGB(RGB_OFF); break;
-  case 66:  sparki.RGB(RGB_RED); break;
-  case 82:  sparki.RGB(RGB_GREEN); break;
-  case 74:  sparki.RGB(RGB_BLUE); break;
+  case 25: sparki.RGB(RGB_OFF); break;
+  case 12: sparki.RGB(RGB_RED); break;
+  case 24: sparki.RGB(RGB_GREEN); break;
+  case 94: sparki.RGB(RGB_BLUE); break;
   
   default:
     break;
