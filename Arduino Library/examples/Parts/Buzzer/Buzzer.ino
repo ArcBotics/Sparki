@@ -3,6 +3,8 @@
  
  Sparki has a buzzer on its back. Try
  making it beep!
+ 
+ http://arcbotics.com/products/sparki/parts/buzzer/
 ********************************************/
 #include <Sparki.h>  // include the sparki library
 

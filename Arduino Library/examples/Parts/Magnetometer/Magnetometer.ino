@@ -14,6 +14,8 @@
  
  This program shows how to read the sensor
  and display the information on the LCD.
+ 
+ http://arcbotics.com/products/sparki/parts/magnetometer/
 ********************************************/
 #include <Sparki.h> // include the sparki library
 

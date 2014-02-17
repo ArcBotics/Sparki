@@ -6,6 +6,8 @@
  Can you get Sparki to do any cool motions?
  Maybe draw something by sticking a pen down
  the center?
+ 
+ http://arcbotics.com/products/sparki/parts/wheels/
 ********************************************/
 #include <Sparki.h> // include the sparki library
 

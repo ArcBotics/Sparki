@@ -6,6 +6,8 @@
  make any color you want. The brightness of
  each color goes from 0 (dark) to 100 (full
  brightness). What colors can you make? 
+ 
+ http://arcbotics.com/products/sparki/parts/rgb-led/
 ********************************************/
 #include <Sparki.h> // include the sparki library
 

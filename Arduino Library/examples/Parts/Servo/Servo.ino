@@ -5,6 +5,8 @@
  can rotate from -90 to 90 degrees. -90 is 
  facing left, 0 is facing forward,  and 90
  is facing right.
+ 
+ http://arcbotics.com/products/sparki/parts/servo/
 ********************************************/
 #include <Sparki.h> // include the sparki library
 

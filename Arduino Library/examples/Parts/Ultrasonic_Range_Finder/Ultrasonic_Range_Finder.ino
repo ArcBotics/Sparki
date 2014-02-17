@@ -6,6 +6,8 @@
  is too close. If it measures -1, that means 
  the sensor is either too close or too far 
  from an object
+ 
+ http://arcbotics.com/products/sparki/parts/ultrasonic-range-finder/
 ********************************************/
 #include <Sparki.h> // include the sparki library
 

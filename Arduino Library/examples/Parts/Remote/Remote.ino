@@ -4,6 +4,8 @@
   Sparki has a sensor that lets it receives
   commands from the included remote control.
   Try moving it around!
+  
+  http://arcbotics.com/infrared-remote-receiver/
 ********************************************/
 #include <Sparki.h> // include the sparki library
 

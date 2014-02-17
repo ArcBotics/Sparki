@@ -4,6 +4,8 @@
  Sparki has a red status LED, next to the
  power on LED. This code first blinks it
  on then off, then fades it on then off.
+ 
+ http://arcbotics.com/products/sparki/parts/status-led/
 ********************************************/
 #include <Sparki.h>  // include the sparki library
 

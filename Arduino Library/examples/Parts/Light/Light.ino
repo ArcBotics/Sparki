@@ -5,6 +5,8 @@
  one each on the left, middle and right.
  This program shows how to read the sensors
  and display the information on the LCD.
+ 
+ http://arcbotics.com/light-sensor/
 ********************************************/
 #include <Sparki.h> // include the sparki library
 

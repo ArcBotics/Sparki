@@ -4,6 +4,8 @@
  Sparki has two little grippers it can be 
  used to grab objects and drag them around.
  See what you can grab with them!
+ 
+ http://arcbotics.com/products/sparki/parts/gripper/
 ********************************************/
 #include <Sparki.h> // include the sparki library
 

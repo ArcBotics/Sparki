@@ -6,6 +6,8 @@
   in the surface color. This example shows
   the numbers from those on the LCD. Try
   seeing what surfaces affect the numbers.
+  
+  http://arcbotics.com/products/sparki/parts/infrared-reflectance-sensor/
 ********************************************/ 
 #include <Sparki.h> // include the sparki library
 
