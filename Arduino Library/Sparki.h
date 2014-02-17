@@ -113,8 +113,8 @@ const float CM_PER_DEGREE      = WHEEL_CIRCUMFERENCE_CM / 360.0;     // wheel mo
 
 #define swap(a, b) { uint8_t t = a; a = b; b = t; }
 
-#define BLACK 1
-#define WHITE 0
+#define BLACK 0
+#define WHITE 1
 
 #define LCDWIDTH 128
 #define LCDHEIGHT 64
