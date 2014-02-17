@@ -15,8 +15,7 @@ void setup()
 void loop()
 {
     sparki.clearLCD(); // wipe the LCD clear
-    //draw a smiley face in the
- upper left hand corner
+    //draw a smiley face in the upper left hand corner
     
     // left eye
     sparki.drawPixel(4, 4);

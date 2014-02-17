@@ -320,7 +320,7 @@ public:
     return size;
   }
   
-  void drawPixel(uint8_t x, uint8_t y, uint8_t color);  
+  void drawPixel(uint8_t x, uint8_t y);  
   void drawCircleFilled(uint8_t x0, uint8_t y0, uint8_t r);
   void drawCircle(uint8_t x0, uint8_t y0, uint8_t r);
   void drawRect(uint8_t x, uint8_t y, uint8_t w, uint8_t h);
