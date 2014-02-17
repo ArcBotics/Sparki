@@ -1452,7 +1452,7 @@ void SparkiClass::my_setpixel(uint8_t x, uint8_t y, uint8_t color) {
 }
 
 // the most basic function, set a single pixel
-void SparkiClass::drawPixel(uint8_t x, uint8_t y, uint8_t color) {
+void SparkiClass::drawPixel(uint8_t x, uint8_t y) {
   if ((x >= LCDWIDTH) || (y >= LCDHEIGHT))
     return;
 
