@@ -1,3 +1,16 @@
+/*******************************************
+ Sparki Line-following example
+ 
+ Threshold is the value that helps you 
+ determine what's black and white. Sparki's 
+ infrared reflectance sensors indicate white 
+ as close to 900, and black as around 200.
+ This example uses a threshold of 500 for 
+ the example, but if you have a narrow line, 
+ or perhaps a lighter black, you may need to 
+ adjust.
+********************************************/
+
 #include <Sparki.h> // include the sparki library
 
 void setup() 
@@ -13,12 +26,12 @@ void loop() {
 
   if ( lineLeft > threshold ) // if line is below left line sensor
   {  
-    sparki.moveRight(); // turn right
+    sparki.moveLeft(); // turn left
   }
 
   if ( lineRight > threshold ) // if line is below right line sensor
   {  
-    sparki.moveLeft(); // turn left
+    sparki.moveRight(); // turn right
   }
 
   // if the center line sensor is the only one reading a line
@@ -44,4 +57,3 @@ void loop() {
 
   delay(100); // wait 0.1 seconds
 }
-

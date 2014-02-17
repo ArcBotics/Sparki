@@ -1457,7 +1457,7 @@ void SparkiClass::drawPixel(uint8_t x, uint8_t y) {
     return;
 
   // x is which column
-  if (color) 
+  if (WHITE) 
     st7565_buffer[x+ (y/8)*128] |= _BV(7-(y%8));  
   else
     st7565_buffer[x+ (y/8)*128] &= ~_BV(7-(y%8)); 
