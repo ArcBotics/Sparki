@@ -308,7 +308,7 @@ void SparkiClass::moveRight(float deg)
       moveRight();
   }
   else{
-      moveLeft();
+      moveRight();
       delay(long(turn));
       moveStop();
   }
