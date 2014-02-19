@@ -1,10 +1,9 @@
 #include <Sparki.h> // include the sparki library
  
-void setup()
-{
- 
+void setup() {
+  sparki.servo(SERVO_CENTER); // Center the Servo
 }
- 
+
 void loop()
 {
     sparki.RGB(RGB_GREEN); // turn the light green
