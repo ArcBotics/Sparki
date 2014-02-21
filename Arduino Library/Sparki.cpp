@@ -451,6 +451,7 @@ void SparkiClass::motorsRotateSteps( int leftDir, int rightDir,  int speed, uint
    cli();
    result =  isRunning[MOTOR_LEFT] || isRunning[MOTOR_RIGHT] || isRunning[MOTOR_GRIPPER] ;
    SREG = oldSREG; 
+   sei();
    return result;
  }
 
@@ -746,6 +747,7 @@ void SparkiClass::setSteps(uint8_t motor, uint32_t steps)
    remainingSteps[motor] = steps; // motor stops after this many steps
    isRunning[motor] = steps > 0;
    SREG = oldSREG;    
+   sei();
 }
 
 uint32_t SparkiClass::getSteps(uint8_t motor )
@@ -754,6 +756,7 @@ uint32_t SparkiClass::getSteps(uint8_t motor )
    cli();
    uint32_t steps = remainingSteps[motor];
    SREG = oldSREG;    
+   sei();
    return steps;
 }
 
