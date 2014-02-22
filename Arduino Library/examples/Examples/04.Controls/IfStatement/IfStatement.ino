@@ -10,16 +10,16 @@ void loop()
  
     if (cm < 10) // if sparki measures a distance less than 10, show red
     {
-      sparki.RGB(RED);
+      sparki.RGB(RGB_RED);
     }
  
     if (cm == 10) // if sparki measures equal to 10, show green
     {
-      sparki.RGB(GREEN);
+      sparki.RGB(RGB_GREEN);
     }
  
     if (cm > 10) // if sparki measures a distance greater than 10, show show
     {
-      sparki.RGB(BLUE);
+      sparki.RGB(RGB_BLUE);
     }
 }
