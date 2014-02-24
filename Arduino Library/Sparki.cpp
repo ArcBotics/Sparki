@@ -48,6 +48,9 @@ volatile float xAxisAccel;
 volatile float yAxisAccel;
 volatile float zAxisAccel;
 
+// variables for the magnetometer
+volatile uint8_t mag_buffer[RawMagDataLength];
+
 // values for the servo
 volatile int8_t servo_deg_offset = 0;
 
@@ -671,10 +674,10 @@ float SparkiClass::accelZ(){
 }
 
 float SparkiClass::readMag(){
-  uint8_t* buffer = WireRead(DataRegisterBegin, RawMagDataLength);
-  xAxisMag = ((buffer[0] << 8) | buffer[1]) * M_SCALE;
-  zAxisMag = ((buffer[2] << 8) | buffer[3]) * M_SCALE;
-  yAxisMag = ((buffer[4] << 8) | buffer[5]) * M_SCALE;    
+  WireRead(DataRegisterBegin, RawMagDataLength);
+  xAxisMag = ((mag_buffer[0] << 8) | mag_buffer[1]) * M_SCALE;
+  zAxisMag = ((mag_buffer[2] << 8) | mag_buffer[3]) * M_SCALE;
+  yAxisMag = ((mag_buffer[4] << 8) | mag_buffer[5]) * M_SCALE;    
 }
 
 float SparkiClass::compass(){
@@ -721,16 +724,14 @@ uint8_t* SparkiClass::WireRead(int address, int length){
   Wire.beginTransmission(HMC5883L_Address);
   Wire.requestFrom(HMC5883L_Address, RawMagDataLength);
 
-  uint8_t buffer[RawMagDataLength];
   if(Wire.available() == RawMagDataLength)
   {
 	  for(uint8_t i = 0; i < RawMagDataLength; i++)
 	  {
-		  buffer[i] = Wire.read();
+		  mag_buffer[i] = Wire.read();
 	  }
   }
   Wire.endTransmission();
-  return buffer;
 }
 
  /*
