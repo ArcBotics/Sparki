@@ -13,9 +13,9 @@
 #define IR_SEND             6        // PD7
 
 #define SERVO               9        // 
-#define SERVO_LEFT          -90
+#define SERVO_LEFT          -85
 #define SERVO_CENTER        0
-#define SERVO_RIGHT         90
+#define SERVO_RIGHT         85
 
 // defining the MUX pins
 #define MUX_ANALOG		A2 // PF5
