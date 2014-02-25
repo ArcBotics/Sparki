@@ -73,13 +73,16 @@
 #define RGB_B 0x04 // pin value of the Blue LED on the RGB on the shift register
 #define RGB_SHIFT 1 // which shift register the RGB is on (starts at 0)
 
-#define RGB_RED 100,0,0
-#define RGB_GREEN 0,100,0
-#define RGB_BLUE 0,0,100
-#define RGB_OFF 0,0,0
-#define RGB_WHITE 50,70,100
-
-
+#define RGB_RED     100, 0,   0
+#define RGB_ORANGE  90,  100, 0
+#define RGB_YELLOW  60,  100, 0
+#define RGB_GREEN   0,   100, 0
+#define RGB_BLUE    0,   0,   100
+#define RGB_PINK    90,  0,   100
+#define RGB_INDIGO  20,  0,   100
+#define RGB_VIOLET  60,  0,   100
+#define RGB_WHITE   60,  100, 90
+#define RGB_OFF     0,   0,   0
 
 // properties about the robot in cm
 #define PI 3.14159

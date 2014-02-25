@@ -299,6 +299,15 @@ void SparkiClass::noBeep(){
 
 void SparkiClass::RGB(uint8_t R, uint8_t G, uint8_t B)
 {
+    if(R > 100){
+        R = 100;
+    }
+    if(G > 100){
+        G = 100;
+    }
+    if(B > 100){
+        B = 100;
+    }
 	RGB_vals[0] = R;
 	RGB_vals[1] = G;
 	RGB_vals[2] = B;
