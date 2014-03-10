@@ -316,13 +316,18 @@ void SparkiClass::RGB(uint8_t R, uint8_t G, uint8_t B)
 void SparkiClass::moveRight(float deg)
 {
   float turn = 21.388888*deg;
-  if( (deg == -1) || (deg == 0) ){
+  if(deg == 0){
       moveRight();
   }
   else{
-      moveRight();
-      delay(long(turn));
-      moveStop();
+      if(deg < 0){
+        moveLeft(deg);
+      }
+      else{
+          moveRight();
+          delay(long(turn));
+          moveStop();
+      }
   }
 }
 
@@ -336,13 +341,18 @@ void SparkiClass::moveRight()
 void SparkiClass::moveLeft(float deg)
 {
   float turn = 21.388888*deg;
-  if( (deg == -1) || (deg == 0) ){
+  if(deg == 0){
       moveLeft();
   }
   else{
-      moveLeft();
-      delay(long(turn));
-      moveStop();
+      if(deg < 0){
+        moveRight(deg);
+      }
+      else{
+          moveLeft();
+          delay(long(turn));
+          moveStop();
+      }
   }
 }
 
@@ -356,13 +366,18 @@ void SparkiClass::moveLeft()
 void SparkiClass::moveForward(float cm)
 {
   float run = 222.222222*cm;
-  if( (cm == -1) || (cm == 0) ){
-      moveForward();
+  if(cm == 0){
+      moveBackward();
   }
   else{
-      moveForward();
-      delay(run);
-      moveStop();
+      if(cm < 0){
+        moveForward(cm);
+      }
+      else{
+          moveBackward();
+          delay(long(run));
+          moveStop();
+      }
   }
 }
 
@@ -376,13 +391,18 @@ void SparkiClass::moveForward()
 void SparkiClass::moveBackward(float cm)
 {
   float run = 222.222222*cm;
-  if( (cm == -1) || (cm == 0) ){
-      moveBackward();
+  if(cm == 0){
+      moveForward();
   }
   else{
-      moveBackward();
-      delay(run);
-      moveStop();
+      if(cm < 0){
+        moveBackward(cm);
+      }
+      else{
+          moveForward();
+          delay(long(run));
+          moveStop();
+      }
   }
 }
 
