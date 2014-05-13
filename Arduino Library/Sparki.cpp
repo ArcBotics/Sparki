@@ -149,7 +149,7 @@ void SparkiClass::begin( ) {
   
   
   
-  // Set up the scheduler routine to run every 100uS, based off Timer4 interrupt
+  // Set up the scheduler routine to run every 200uS, based off Timer4 interrupt
   cli();          // disable all interrupts
   TCCR4A = 0;
   TCCR4B = 0;
