@@ -18,6 +18,7 @@ static int8_t step_dir[3];                 // -1 = ccw, 1 = cw
 
 static uint8_t motor_speed[3];              // stores last set motor speed (0-100%)
 
+uint8_t pixel_color = WHITE;
 
 static volatile uint8_t move_speed = 100;
 static volatile uint8_t speed_index[3];
@@ -1258,8 +1259,6 @@ uint8_t st7565_buffer[1024] = {
 static uint8_t xUpdateMin, xUpdateMax, yUpdateMin, yUpdateMax;
 #endif
 
-
-
 static void updateBoundingBox(uint8_t xmin, uint8_t ymin, uint8_t xmax, uint8_t ymax) {
 #ifdef enablePartialUpdate
   if (xmin < xUpdateMin) xUpdateMin = xmin;
@@ -1269,12 +1268,23 @@ static void updateBoundingBox(uint8_t xmin, uint8_t ymin, uint8_t xmax, uint8_t 
 #endif
 }
 
+
+void SparkiClass::setPixelColor(uint8_t color){
+    // sanitize the input
+    if(color == WHITE){
+        pixel_color = WHITE;
+    }
+    if(color == BLACK){
+        pixel_color = BLACK;
+    }
+}
+
 void SparkiClass::drawBitmap(uint8_t x, uint8_t y, 
 			const uint8_t *bitmap, uint8_t w, uint8_t h) {
   for (uint8_t j=0; j<h; j++) {
     for (uint8_t i=0; i<w; i++ ) {
       if (pgm_read_byte(bitmap + i + (j/8)*w) & _BV(j%8)) {
-	my_setpixel(x+i, y+j, WHITE);
+	my_setpixel(x+i, y+j, pixel_color);
       }
     }
   }
@@ -1388,9 +1398,9 @@ void SparkiClass::drawLine(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1) {
 
   for (; x0<=x1; x0++) {
     if (steep) {
-      my_setpixel(y0, x0, WHITE);
+      my_setpixel(y0, x0, pixel_color);
     } else {
-      my_setpixel(x0, y0, WHITE);
+      my_setpixel(x0, y0, pixel_color);
     }
     err -= dy;
     if (err < 0) {
@@ -1406,7 +1416,7 @@ void SparkiClass::drawRectFilled(uint8_t x, uint8_t y, uint8_t w, uint8_t h) {
   // stupidest version - just pixels - but fast with internal buffer!
   for (uint8_t i=x; i<x+w; i++) {
     for (uint8_t j=y; j<y+h; j++) {
-      my_setpixel(i, j, WHITE);
+      my_setpixel(i, j, pixel_color);
     }
   }
 
@@ -1417,12 +1427,12 @@ void SparkiClass::drawRectFilled(uint8_t x, uint8_t y, uint8_t w, uint8_t h) {
 void SparkiClass::drawRect(uint8_t x, uint8_t y, uint8_t w, uint8_t h) {
   // stupidest version - just pixels - but fast with internal buffer!
   for (uint8_t i=x; i<x+w; i++) {
-    my_setpixel(i, y, WHITE);
-    my_setpixel(i, y+h-1, WHITE);
+    my_setpixel(i, y, pixel_color);
+    my_setpixel(i, y+h-1, pixel_color);
   }
   for (uint8_t i=y; i<y+h; i++) {
-    my_setpixel(x, i, WHITE);
-    my_setpixel(x+w-1, i, WHITE);
+    my_setpixel(x, i, pixel_color);
+    my_setpixel(x+w-1, i, pixel_color);
   } 
 
   updateBoundingBox(x, y, x+w, y+h);
@@ -1438,10 +1448,10 @@ void SparkiClass::drawCircle(uint8_t x0, uint8_t y0, uint8_t r) {
   int8_t x = 0;
   int8_t y = r;
 
-  my_setpixel(x0, y0+r, WHITE);
-  my_setpixel(x0, y0-r, WHITE);
-  my_setpixel(x0+r, y0, WHITE);
-  my_setpixel(x0-r, y0, WHITE);
+  my_setpixel(x0, y0+r, pixel_color);
+  my_setpixel(x0, y0-r, pixel_color);
+  my_setpixel(x0+r, y0, pixel_color);
+  my_setpixel(x0-r, y0, pixel_color);
 
   while (x<y) {
     if (f >= 0) {
@@ -1453,15 +1463,15 @@ void SparkiClass::drawCircle(uint8_t x0, uint8_t y0, uint8_t r) {
     ddF_x += 2;
     f += ddF_x;
   
-    my_setpixel(x0 + x, y0 + y, WHITE);
-    my_setpixel(x0 - x, y0 + y, WHITE);
-    my_setpixel(x0 + x, y0 - y, WHITE);
-    my_setpixel(x0 - x, y0 - y, WHITE);
+    my_setpixel(x0 + x, y0 + y, pixel_color);
+    my_setpixel(x0 - x, y0 + y, pixel_color);
+    my_setpixel(x0 + x, y0 - y, pixel_color);
+    my_setpixel(x0 - x, y0 - y, pixel_color);
     
-    my_setpixel(x0 + y, y0 + x, WHITE);
-    my_setpixel(x0 - y, y0 + x, WHITE);
-    my_setpixel(x0 + y, y0 - x, WHITE);
-    my_setpixel(x0 - y, y0 - x, WHITE);
+    my_setpixel(x0 + y, y0 + x, pixel_color);
+    my_setpixel(x0 - y, y0 + x, pixel_color);
+    my_setpixel(x0 + y, y0 - x, pixel_color);
+    my_setpixel(x0 - y, y0 - x, pixel_color);
     
   }
 }
@@ -1476,7 +1486,7 @@ void SparkiClass::drawCircleFilled(uint8_t x0, uint8_t y0, uint8_t r) {
   int8_t y = r;
 
   for (uint8_t i=y0-r; i<=y0+r; i++) {
-    my_setpixel(x0, i, WHITE);
+    my_setpixel(x0, i, pixel_color);
   }
 
   while (x<y) {
@@ -1490,12 +1500,12 @@ void SparkiClass::drawCircleFilled(uint8_t x0, uint8_t y0, uint8_t r) {
     f += ddF_x;
   
     for (uint8_t i=y0-y; i<=y0+y; i++) {
-      my_setpixel(x0+x, i, WHITE);
-      my_setpixel(x0-x, i, WHITE);
+      my_setpixel(x0+x, i, pixel_color);
+      my_setpixel(x0-x, i, pixel_color);
     } 
     for (uint8_t i=y0-x; i<=y0+x; i++) {
-      my_setpixel(x0+y, i, WHITE);
-      my_setpixel(x0-y, i, WHITE);
+      my_setpixel(x0+y, i, pixel_color);
+      my_setpixel(x0-y, i, pixel_color);
     }    
   }
 }

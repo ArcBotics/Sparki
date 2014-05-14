@@ -310,6 +310,7 @@ public:
   
   void clearLCD();
   void updateLCD();
+  void setPixelColor();
   
   void moveUpLine();
   
