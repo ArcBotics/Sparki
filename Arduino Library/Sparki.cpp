@@ -15,8 +15,18 @@
 #include "Sparkii2c.h"
 
 static int8_t step_dir[3];                 // -1 = ccw, 1 = cw  
-static volatile uint8_t speed_index[3];     // counter controlling motor speed 
+
 static uint8_t motor_speed[3];              // stores last set motor speed (0-100%)
+
+
+static volatile uint8_t move_speed = 100;
+static volatile uint8_t speed_index[3];
+static volatile uint8_t speed_array[3][SPEED_ARRAY_LENGTH];    
+                                        // for each motor, how many 200uS waits between each step. 
+                                        // Cycles through an array of 10 of these counts to average 
+                                        // for better speed control
+
+
 static volatile int8_t step_index[3];       // index into _steps array  
 static uint8_t _steps_right[9];                   // bytes defining stepper coil activations
 static uint8_t _steps_left[9];                   // bytes defining stepper coil activations
@@ -55,8 +65,6 @@ volatile uint8_t mag_buffer[RawMagDataLength];
 volatile int8_t servo_deg_offset = 0;
 
 SparkiClass sparki;
-
-//static volatile int speedCounter;
 
 SparkiClass::SparkiClass()
 {
@@ -145,7 +153,7 @@ void SparkiClass::begin( ) {
   updateLCD();
 
   // Setup initial Stepper settings
-  motor_speed[MOTOR_LEFT] = motor_speed[MOTOR_RIGHT] = motor_speed[MOTOR_GRIPPER] =100;
+  motor_speed[MOTOR_LEFT] = motor_speed[MOTOR_RIGHT] = motor_speed[MOTOR_GRIPPER] = move_speed;
   
   
   
@@ -276,7 +284,7 @@ int SparkiClass::diffIR(int pin0, int pin1, int pin2){
 }
 
 void SparkiClass::beep(){
-    tone(BUZZER, 4000, 200);
+    tone(BUZZER, BUZZER_FREQ, 200);
 }
 
 void SparkiClass::beep(int freq){
@@ -290,12 +298,6 @@ void SparkiClass::beep(int freq, int time){
 void SparkiClass::noBeep(){
     noTone(BUZZER);
 }
-
-
-/*
- * motor control (non-blocking, except when moving distances)
- * speed is percent 0-100
-*/
 
 void SparkiClass::RGB(uint8_t R, uint8_t G, uint8_t B)
 {
@@ -313,9 +315,14 @@ void SparkiClass::RGB(uint8_t R, uint8_t G, uint8_t B)
 	RGB_vals[2] = B;
 }
 
+/*
+ * motor control (non-blocking, except when moving distances)
+ * speed is percent 0-100
+*/
+
 void SparkiClass::moveRight(float deg)
 {
-  float turn = 21.388888*deg;
+  unsigned long steps = STEPS_PER_DEGREE*deg;
   if(deg == 0){
       moveRight();
   }
@@ -325,22 +332,28 @@ void SparkiClass::moveRight(float deg)
       }
       else{
           moveRight();
-          delay(long(turn));
-          moveStop();
+          while( areMotorsRunning() ){
+            delay(1);
+          }
       }
   }
 }
 
+void SparkiClass::stepRight(unsigned long steps)
+{
+  motorRotate(MOTOR_LEFT, DIR_CCW, move_speed, steps);
+  motorRotate(MOTOR_RIGHT, DIR_CCW, move_speed, steps);
+}
+
 void SparkiClass::moveRight()
 {
-  motorRotate(MOTOR_LEFT, DIR_CCW, 100);
-  motorRotate(MOTOR_RIGHT, DIR_CCW, 100);
-  
+  motorRotate(MOTOR_LEFT, DIR_CCW, move_speed, ULONG_MAX);
+  motorRotate(MOTOR_RIGHT, DIR_CCW, move_speed, ULONG_MAX);
 }
 
 void SparkiClass::moveLeft(float deg)
 {
-  float turn = 21.388888*deg;
+  unsigned long steps = STEPS_PER_DEGREE*deg;
   if(deg == 0){
       moveLeft();
   }
@@ -349,48 +362,29 @@ void SparkiClass::moveLeft(float deg)
         moveRight(deg);
       }
       else{
-          moveLeft();
-          delay(long(turn));
-          moveStop();
+          stepLeft(steps);
+          while( areMotorsRunning() ){
+            delay(1);
+          }
       }
   }
+}
+
+void SparkiClass::stepLeft(unsigned long steps)
+{
+  motorRotate(MOTOR_LEFT, DIR_CW, move_speed, steps);
+  motorRotate(MOTOR_RIGHT, DIR_CW, move_speed, steps);
 }
 
 void SparkiClass::moveLeft()
 {
-  motorRotate(MOTOR_LEFT, DIR_CW, 100);
-  motorRotate(MOTOR_RIGHT, DIR_CW, 100);
-  
+  motorRotate(MOTOR_LEFT, DIR_CW, move_speed, ULONG_MAX);
+  motorRotate(MOTOR_RIGHT, DIR_CW, move_speed, ULONG_MAX);
 }
 
 void SparkiClass::moveForward(float cm)
 {
-  float run = 222.222222*cm;
-  if(cm == 0){
-      moveBackward();
-  }
-  else{
-      if(cm < 0){
-        moveForward(cm);
-      }
-      else{
-          moveBackward();
-          delay(long(run));
-          moveStop();
-      }
-  }
-}
-
-void SparkiClass::moveForward()
-{
-  motorRotate(MOTOR_LEFT, DIR_CCW, 100);
-  motorRotate(MOTOR_RIGHT, DIR_CW, 100);
-  
-}
-
-void SparkiClass::moveBackward(float cm)
-{
-  float run = 222.222222*cm;
+  unsigned long steps = STEPS_PER_CM*cm;
   if(cm == 0){
       moveForward();
   }
@@ -399,17 +393,55 @@ void SparkiClass::moveBackward(float cm)
         moveBackward(cm);
       }
       else{
-          moveForward();
-          delay(long(run));
-          moveStop();
+          stepForward(steps);
+          while( areMotorsRunning() ){
+            delay(1);
+          }
       }
   }
 }
 
+void SparkiClass::stepForward(unsigned long steps)
+{
+  motorRotate(MOTOR_LEFT, DIR_CCW, move_speed, steps);
+  motorRotate(MOTOR_RIGHT, DIR_CW, move_speed, steps);
+}
+
+void SparkiClass::moveForward()
+{
+  motorRotate(MOTOR_LEFT, DIR_CCW, move_speed, ULONG_MAX);
+  motorRotate(MOTOR_RIGHT, DIR_CW, move_speed, ULONG_MAX);
+}
+
+void SparkiClass::moveBackward(float cm)
+{
+  unsigned long steps = STEPS_PER_CM*cm;
+  if(cm == 0){
+      moveBackward();
+  }
+  else{
+      if(cm < 0){
+        moveForward(cm);
+      }
+      else{
+          moveBackward(steps);
+          while( areMotorsRunning() ){
+            delay(1);
+          }
+      }
+  }
+}
+
+void SparkiClass::stepBackward(unsigned long steps)
+{
+  motorRotate(MOTOR_LEFT, DIR_CW, move_speed, steps);
+  motorRotate(MOTOR_RIGHT, DIR_CCW, move_speed, steps);
+}
+
 void SparkiClass::moveBackward()
 {
-  motorRotate(MOTOR_LEFT, DIR_CW, 100);
-  motorRotate(MOTOR_RIGHT, DIR_CCW, 100);
+  motorRotate(MOTOR_LEFT, DIR_CW, move_speed, ULONG_MAX);
+  motorRotate(MOTOR_RIGHT, DIR_CCW, move_speed, ULONG_MAX);
 }
 
 void SparkiClass::moveStop()
@@ -420,59 +452,69 @@ void SparkiClass::moveStop()
 
 void SparkiClass::gripperOpen()
 {
-  motorRotate(MOTOR_GRIPPER, DIR_CCW, 100);
+  motorRotate(MOTOR_GRIPPER, DIR_CCW, move_speed, ULONG_MAX);
 }
 void SparkiClass::gripperClose()
 {
-  motorRotate(MOTOR_GRIPPER, DIR_CW, 100);
+  motorRotate(MOTOR_GRIPPER, DIR_CW, move_speed, ULONG_MAX);
 }
 void SparkiClass::gripperStop()
 {
   motorStop(MOTOR_GRIPPER);
 }
 
-void SparkiClass::motorRotate(int motor, int direction,  int speed)
+void SparkiClass::speed(uint8_t speed)
 {
-   //Serial.print("Motor ");Serial.print(motor); Serial.print(" rotate, dir= "); Serial.println(direction);
-   uint8_t oldSREG = SREG;
-   cli();
-   motor_speed[motor] = speed;  
-   step_dir[motor] = direction;  
-   remainingSteps[motor] = ULONG_MAX; // motor stops after this many steps, almost 50 days of stepping if motor not stopped
-   isRunning[motor] = true;
-   speedCount[motor] = int(100.0/float(motor_speed[motor])*5.0);
-   speedCounter[motor] = speedCount[motor];
-   SREG = oldSREG; 
-   sei();
-   delay(10);
+    move_speed = speed;
+}
+
+
+void SparkiClass::motorRotate(int motor, int direction, int speed, long steps)
+{
+   Serial.print("Motor ");Serial.print(motor); Serial.print(" rotate, dir= "); 
+   Serial.print(direction); Serial.print(", steps= "); Serial.println(steps);
+   
+   motor_speed[motor] = speed; // speed in 1-100 precent
+   
+   // populate the speed array with multiples of 200us waits between steps
+   // having 10 different waits allows finer grained control
+   if(speed == 0){
+      uint8_t oldSREG = SREG; cli();
+      remainingSteps[motor] = 0; 
+      isRunning[motor] = false;
+      SREG = oldSREG; sei(); 
+   }
+   else{
+      int base_waits = 500/speed;
+      int remainder_waits = int((500.0/float(speed) - float(base_waits))*SPEED_ARRAY_LENGTH); 
+
+      for(uint8_t i=0; i< (SPEED_ARRAY_LENGTH-remainder_waits); i++){
+         speed_array[motor][i] = base_waits+1;
+       }
+      for(uint8_t i=(SPEED_ARRAY_LENGTH-remainder_waits); i<SPEED_ARRAY_LENGTH; i++){
+         speed_array[motor][i] = base_waits;
+       }
+      
+      uint8_t oldSREG = SREG; cli();
+      speed_index[motor] = 0;
+      speedCount[motor] = speed_array[motor][0];
+      speedCounter[motor] = speedCount[motor];
+      remainingSteps[motor] = steps;
+      step_dir[motor] = direction;  
+      isRunning[motor] = true;
+      SREG = oldSREG; sei(); 
+
+      Serial.print("base: ");
+      Serial.print(base_waits);
+      Serial.print(", remainder: ");
+      Serial.println(remainder_waits);
+   }
+   delay(1);
 }
 
 void SparkiClass::motorStop(int motor)
 {
-   //Serial.println("Motor Stop"); 
-   motor_speed[motor] = 0;  
-   setSteps(motor, 0);
-}
-
-void SparkiClass::motorsRotateSteps( int leftDir, int rightDir,  int speed, uint32_t steps, bool wait)
-{
-  uint8_t oldSREG = SREG;
-  cli();
-  motor_speed[MOTOR_LEFT] = motor_speed[MOTOR_RIGHT] = speed;  
-  step_dir[MOTOR_LEFT] = leftDir;   
-  step_dir[MOTOR_RIGHT] = rightDir; 
-  remainingSteps[MOTOR_LEFT] = remainingSteps[MOTOR_RIGHT] = steps;
-  isRunning[MOTOR_LEFT] = isRunning[MOTOR_RIGHT] = true;
-
-  SREG = oldSREG; 
-  sei();
-  if( wait)
-  {
-    while ( areMotorsRunning() ){
-      delay(10);  // remainingSteps is decrimented in the timer callback     
-    }
-  }  
- 
+   motorRotate(motor, 1, 0, 0);
 }
  
  // returns true if one or both motors a still stepping
@@ -770,29 +812,9 @@ uint8_t* SparkiClass::WireRead(int address, int length){
  // set the number if steps for the given motor 
 
 
-void SparkiClass::setSteps(uint8_t motor, uint32_t steps)
-{
-   uint8_t oldSREG = SREG;
-   cli();
-   remainingSteps[motor] = steps; // motor stops after this many steps
-   isRunning[motor] = steps > 0;
-   SREG = oldSREG;    
-   sei();
-}
-
-uint32_t SparkiClass::getSteps(uint8_t motor )
-{
-   uint8_t oldSREG = SREG;
-   cli();
-   uint32_t steps = remainingSteps[motor];
-   SREG = oldSREG;    
-   sei();
-   return steps;
-}
-
 /***********************************************************************************
 The Scheduler
-Every 100uS (10,000 times a second), we update the 2 shift registers used to increase
+Every 200uS (5,000 times a second), we update the 2 shift registers used to increase
 the amount of outputs the processor has
 ***********************************************************************************/
 
@@ -800,7 +822,7 @@ ISR(TIMER4_COMPA_vect)          // interrupt service routine that wraps a user d
 {
 //void SparkiClass::scheduler(){ 
     uint8_t oldSREG = SREG;
-    // Clear the timer interrupt counter 
+    // Clear the timer interrupt counter
     TCNT4=0;
     
 	// clear the shift register values so we can re-write them
@@ -831,17 +853,24 @@ ISR(TIMER4_COMPA_vect)          // interrupt service routine that wraps a user d
     }
     
     //// Motor Control ////
-    
     //   Determine what state the stepper coils are in
 	for(byte motor=0; motor<3; motor++){
-		if( remainingSteps[motor] > 1 ){ // check if finished stepping     
-			if( speedCounter[motor] == 0) { // 
+		if( remainingSteps[motor] > 1 ){ // check if finished stepping   
+		    // speedCount determines the stepping frequency
+		    // interrupt speed (5khz) divided by speedCounter equals stepping freq
+		    // 1khz is the maximum reliable frequency at 5v, so we use 5 as the top speed
+		    // 5,000hz/5 = 1000hz = micro-stepping frequency
+			if(speedCounter[motor] == 0) { 
 				step_index[motor] += step_dir[motor];
 				remainingSteps[motor]--;
-				speedCounter[motor] = speedCount[motor];
+				speedCounter[motor] = speed_array[motor][speed_index[motor]];
+				speed_index[motor]++;
+				if(speed_index[motor] >= SPEED_ARRAY_LENGTH){
+			      speed_index[motor] = 0;
+			    }
 			}
 			else{
-				speedCounter[motor] = speedCounter[motor]-1;
+			   speedCounter[motor] = speedCounter[motor]-1;
 			}
 			
 		}
@@ -866,9 +895,7 @@ ISR(TIMER4_COMPA_vect)          // interrupt service routine that wraps a user d
 
     shift_outputs[0] |= _steps_right[step_index[MOTOR_RIGHT]];
     shift_outputs[0] |= _steps_left[step_index[MOTOR_GRIPPER]];
-    
     shift_outputs[1] |= _steps_left[step_index[MOTOR_LEFT]];
-    
     
 	//output values to shift registers
     PORTD &= ~(1<<5);    // pull PD5 (shift-register latch) low

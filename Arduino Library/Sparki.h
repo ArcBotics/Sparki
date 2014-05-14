@@ -7,6 +7,7 @@
 #define SHIFTREG_LATCH      TXLED0   // PD5
 #define STATUS_LED          13        
 #define BUZZER              11       // PB7
+#define BUZZER_FREQ         2800
 #define ULTRASONIC_ECHO     5        // PC6
 #define ULTRASONIC_TRIG     10       // PB6
 #define IR_RECEIVE          7        // PE6
@@ -65,8 +66,6 @@
 #define REMOTE_8        82
 #define REMOTE_9        74
 
-#define STEP_DELAY      1000
-
 // define the shift registers pin output values for the RGB arrays
 #define RGB_R 0x01 // pin value of the Red LED on the RGB on the shift register
 #define RGB_G 0x02 // pin value of the Green LED on the RGB on the shift register
@@ -86,31 +85,31 @@
 
 // properties about the robot in cm
 #define PI 3.14159
-const float WHEEL_DIAMETER_CM     = 5.15;
+const int   STEPS_PER_REV          = 4096; // steps for wheels to revolve 360 degrees
+const float WHEEL_DIAMETER_CM      = 5.00;
 const float WHEEL_CIRCUMFERENCE_CM = WHEEL_DIAMETER_CM * PI;
-const float TRACK_WIDTH            = 11.1;              //tyre seperation in cm  
-//const float WHEEL_TRAVEL_PER_360   = WHEEL_TRACK * PI;  // cm per ROBOT revolution 
+const float CM_PER_STEP            = WHEEL_CIRCUMFERENCE_CM / STEPS_PER_REV;
+const float STEPS_PER_CM            = STEPS_PER_REV / WHEEL_CIRCUMFERENCE_CM;
 
-const int   STEPS_PER_REV      = 8192; // steps for wheels to revolve 360 degrees
+const float TRACK_WIDTH_CM         = 8.51;              //tire seperation in cm  
+const float STEPS_PER_ROTATION     = (TRACK_WIDTH_CM / WHEEL_DIAMETER_CM) * STEPS_PER_REV ;  // robot rotation
+const float STEPS_PER_DEGREE       = STEPS_PER_ROTATION / 360.0;         // robot rotation
+const float CM_PER_DEGREE          = WHEEL_CIRCUMFERENCE_CM / 360.0;     // wheel movement per degree rotation of robot 
 
+//#define SPARKI_CORRECTION_VALUE 1.0319444
+#define SPARKI_CORRECTION_VALUE 1.0
 
-const float STEPS_PER_CM       = STEPS_PER_REV / WHEEL_CIRCUMFERENCE_CM; // linear movement
-const float STEPS_PER_ROTATION = (TRACK_WIDTH / WHEEL_DIAMETER_CM) * STEPS_PER_REV ;  // robot rotation
-const float STEPS_PER_DEGREE   = STEPS_PER_ROTATION / 360.0;         // robot rotation
-const float CM_PER_DEGREE      = WHEEL_CIRCUMFERENCE_CM / 360.0;     // wheel movement per degree rotation of robot 
-
-// circumference = 16.18
-
+#define DISTANCE_TIME_COSNTANT 222.222222
+#define DEGREES_TIME_COSNTANT  21.388888
 
 // defines for left and right motors
-#define MOTOR_LEFT  0
-#define MOTOR_RIGHT 1
+#define MOTOR_LEFT    0
+#define MOTOR_RIGHT   1
 #define MOTOR_GRIPPER 2
 
 // defines for direction
 #define DIR_CCW -1
 #define DIR_CW   1
-
 
 //includes for the LCD 
 
@@ -185,6 +184,10 @@ const float CM_PER_DEGREE      = WHEEL_CIRCUMFERENCE_CM / 360.0;     // wheel mo
 #define MMA8452_ADDRESS 0x1D  // SA0 is high, 0x1C if low
 #define ACCEL_SCALE 2  // Sets full-scale range to +/-2, 4, or 8g. Used to calc real g values.
 #define ACCEL_DATARATE 0 //Set the output data rate: 0=800Hz, 1=400, 2=200, 3=100, 4=50, 5=12.5, 6=6.25, 7=1.56
+
+#define SPEED_ARRAY_LENGTH 10  // uses an array to determine speed. 
+                               // increase this number (<255) to increase precision of speed control
+
 
 class SparkiClass : public Print {
 
@@ -264,32 +267,33 @@ public:
 
 // high-level move functions
   void moveForward(float);
+  void stepForward(unsigned long);
   void moveForward();
   
   void moveBackward(float);
+  void stepBackward(unsigned long);
   void moveBackward();
   
   void moveLeft(float);
+  void stepLeft(unsigned long);
   void moveLeft();
   
   void moveRight(float);
+  void stepRight(unsigned long);
   void moveRight();
-  
-  void moveStop();
-   
+
   void gripperOpen();
   void gripperClose();
   void gripperStop();
+  
+  void moveStop();
+  void speed(uint8_t);
 
 // individual motor control (non-blocking)
 // speed range is percent 0-100
-  void motorRotate( int motor, int direction,  int speed);
+  void motorRotate( int motor, int direction,  int speed, long steps);
   void motorStop(int motor);
 
-// combined motor control using step count
-// this function blocks by default but returns after starting motors if wait = false
-  void motorsRotateSteps( int leftDir, int rightDir,  int speed, uint32_t steps, bool wait= true);
- 
 // returns true if one or both motors a still stepping
   bool areMotorsRunning();
    
@@ -335,11 +339,7 @@ public:
   void drawBitmap(uint8_t x, uint8_t y, 
 		  const uint8_t *bitmap, uint8_t w, uint8_t h);
 
-private:   
-  uint8_t stepIndex[2];   
-  
-  void setSteps(uint8_t motor, uint32_t steps);  // sets the number of remaining steps, motor stops when this is 0
-  uint32_t getSteps(uint8_t motor ); // returns the number of remaining steps
+private:    
   static void scheduler();
 
 // Display Functions
