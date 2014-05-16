@@ -626,6 +626,7 @@ void SparkiClass::sendIR(uint8_t code){
   uint8_t TCCR3A_store = TCCR3A;
   uint8_t TCCR3B_store = TCCR3B;
   uint8_t TCNT3_store = TCNT3;  
+  uint8_t EIMSK_store = EIMSK;
   
   uint8_t TIMSK4_store = TIMSK4;
   
@@ -635,6 +636,7 @@ void SparkiClass::sendIR(uint8_t code){
   TCCR3A = 0;
   TCCR3B = 0;
   TCNT3  = 0;
+  EIMSK  = 0;
 
   TCCR3B |= _BV(CS31);      // set timer clock at 1/8th of CLK_i/o (=CLK_sys)
   OCR3B = 22;               // compare match register
@@ -695,7 +697,8 @@ void SparkiClass::sendIR(uint8_t code){
   TIMSK3 = TIMSK3_store;
   TCCR3A = TCCR3A_store;
   TCCR3B = TCCR3B_store;
-  TCNT3 = TCNT3_store;
+  TCNT3  = TCNT3_store;
+  EIMSK  = EIMSK_store;
 }
 
 void SparkiClass::irPulse(uint16_t on, uint16_t off){
