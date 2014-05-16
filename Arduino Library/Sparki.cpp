@@ -333,7 +333,7 @@ void SparkiClass::moveRight(float deg)
         moveLeft(deg);
       }
       else{
-          stepRight();
+          stepRight(steps);
           while( areMotorsRunning() ){
             delay(1);
           }
@@ -880,9 +880,9 @@ uint8_t* SparkiClass::WireRead(int address, int length){
  
  // set the number if steps for the given motor 
 
-ISR(TIMER3_COMPB_vect) IR send function, operates at ~38khz when active
+ISR(TIMER3_COMPB_vect) // IR send function, operates at ~38khz when active
 {
-    PORTD ^= (1<<7); toggle the IR LED pin
+    PORTD ^= (1<<7); // toggle the IR LED pin
     TCNT3=0;
 }
 
