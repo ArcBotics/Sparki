@@ -5,7 +5,7 @@
  determine what's black and white. Sparki's 
  infrared reflectance sensors indicate white 
  as close to 900, and black as around 200.
- This example uses a threshold of 500 for 
+ This example uses a threshold of 700 for 
  the example, but if you have a narrow line, 
  or perhaps a lighter black, you may need to 
  adjust.
@@ -18,27 +18,27 @@ void setup()
 }
 
 void loop() {
-  int threshold = 500;
+  int threshold = 700;
   
   int lineLeft   = sparki.lineLeft();   // measure the left IR sensor
   int lineCenter = sparki.lineCenter(); // measure the center IR sensor
   int lineRight  = sparki.lineRight();  // measure the right IR sensor
 
-  if ( lineLeft > threshold ) // if line is below left line sensor
+  if ( lineCenter < threshold ) // if line is below left line sensor
   {  
-    sparki.moveLeft(); // turn left
-  }
-
-  if ( lineRight > threshold ) // if line is below right line sensor
-  {  
-    sparki.moveRight(); // turn right
-  }
-
-  // if the center line sensor is the only one reading a line
-  if ( (lineCenter > threshold) && (lineLeft < threshold) && (lineRight < threshold) )
-  {
     sparki.moveForward(); // move forward
-  }  
+  }
+  else{
+    if ( lineLeft < threshold ) // if line is below left line sensor
+    {  
+      sparki.moveLeft(); // turn left
+    }
+  
+    if ( lineRight < threshold ) // if line is below right line sensor
+    {  
+      sparki.moveRight(); // turn right
+    }
+  }
 
   sparki.clearLCD(); // wipe the screen
   
