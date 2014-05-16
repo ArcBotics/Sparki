@@ -20,6 +20,8 @@ static uint8_t motor_speed[3];              // stores last set motor speed (0-10
 
 uint8_t pixel_color = WHITE;
 
+uint8_t ir_active = 1;
+
 static volatile uint8_t move_speed = 100;
 static volatile uint8_t speed_index[3];
 static volatile uint8_t speed_array[3][SPEED_ARRAY_LENGTH];    
@@ -156,17 +158,16 @@ void SparkiClass::begin( ) {
   // Setup initial Stepper settings
   motor_speed[MOTOR_LEFT] = motor_speed[MOTOR_RIGHT] = motor_speed[MOTOR_GRIPPER] = move_speed;
   
-  
-  
   // Set up the scheduler routine to run every 200uS, based off Timer4 interrupt
   cli();          // disable all interrupts
   TCCR4A = 0;
   TCCR4B = 0;
   TCNT4  = 0;
 
-  OCR4A = 48;               // compare match register 16MHz/32/10000Hz
-  TCCR4B |= (1 << WGM12);   // CTC mode
-  TCCR4B = 0x06;            // CLK/32 prescaler (32 = 2^(0110-1))
+  OCR4A = 48;               // compare match register 64MHz/2048 = 31250hz
+  //TCCR4B |= (1 << WGM12);   // CTC mode
+  TCCR4B = 0x06;
+  //TCCR4B = _BV(CS43) | _BV(CS42);            // CLK/2048 prescaler
   TIMSK4 |= (1 << OCIE4A);  // enable Timer4 compare interrupt A
   sei();             // enable all interrupts
   
@@ -182,8 +183,8 @@ void SparkiClass::begin( ) {
   
   initAccelerometer();
   
-   WireWrite(ConfigurationRegisterB, (0x01 << 5));
-   WireWrite(ModeRegister, Measurement_Continuous);  
+  WireWrite(ConfigurationRegisterB, (0x01 << 5));
+  WireWrite(ModeRegister, Measurement_Continuous);  
   readMag(); // warm it up  
 
 }
@@ -332,7 +333,7 @@ void SparkiClass::moveRight(float deg)
         moveLeft(deg);
       }
       else{
-          moveRight();
+          stepRight();
           while( areMotorsRunning() ){
             delay(1);
           }
@@ -373,13 +374,13 @@ void SparkiClass::moveLeft(float deg)
 
 void SparkiClass::stepLeft(unsigned long steps)
 {
-  motorRotate(MOTOR_LEFT, DIR_CW, move_speed, steps);
+  motorRotate(MOTOR_LEFT,  DIR_CW, move_speed, steps);
   motorRotate(MOTOR_RIGHT, DIR_CW, move_speed, steps);
 }
 
 void SparkiClass::moveLeft()
 {
-  motorRotate(MOTOR_LEFT, DIR_CW, move_speed, ULONG_MAX);
+  motorRotate(MOTOR_LEFT,  DIR_CW, move_speed, ULONG_MAX);
   motorRotate(MOTOR_RIGHT, DIR_CW, move_speed, ULONG_MAX);
 }
 
@@ -425,7 +426,7 @@ void SparkiClass::moveBackward(float cm)
         moveForward(cm);
       }
       else{
-          moveBackward(steps);
+          stepBackward(steps);
           while( areMotorsRunning() ){
             delay(1);
           }
@@ -435,13 +436,13 @@ void SparkiClass::moveBackward(float cm)
 
 void SparkiClass::stepBackward(unsigned long steps)
 {
-  motorRotate(MOTOR_LEFT, DIR_CW, move_speed, steps);
+  motorRotate(MOTOR_LEFT,   DIR_CW, move_speed, steps);
   motorRotate(MOTOR_RIGHT, DIR_CCW, move_speed, steps);
 }
 
 void SparkiClass::moveBackward()
 {
-  motorRotate(MOTOR_LEFT, DIR_CW, move_speed, ULONG_MAX);
+  motorRotate(MOTOR_LEFT,   DIR_CW, move_speed, ULONG_MAX);
   motorRotate(MOTOR_RIGHT, DIR_CCW, move_speed, ULONG_MAX);
 }
 
@@ -609,6 +610,103 @@ int SparkiClass::ping(){
   return int(distances[(int)ceil((float)attempts/2.0)]); 
 }
 
+// Uses timer3 to send on/off IR pulses according to the NEC IR transmission standard
+// http://wiki.altium.com/display/ADOH/NEC+Infrared+Transmission+Protocol
+// protocol. Turns off timer3 functions and timer4 motor/LED interference to avoid conflict
+void SparkiClass::sendIR(uint8_t code){
+  char oldSREG = SREG;				
+  noInterrupts();  // Disable interrupts for 16 bit register access
+  
+  //***********************************************
+  // Set up and tear down Timer3 and Timer4 roles
+  //***********************************************
+  
+  // saves settings for timer3
+  uint8_t TIMSK3_store = TIMSK3;
+  uint8_t TCCR3A_store = TCCR3A;
+  uint8_t TCCR3B_store = TCCR3B;
+  uint8_t TCNT3_store = TCNT3;  
+  
+  uint8_t TIMSK4_store = TIMSK4;
+  
+  // wipe the timer settings
+  TIMSK4 = 0;
+  TIMSK3 = 0;
+  TCCR3A = 0;
+  TCCR3B = 0;
+  TCNT3  = 0;
+
+  TCCR3B |= _BV(CS31);      // set timer clock at 1/8th of CLK_i/o (=CLK_sys)
+  OCR3B = 22;               // compare match register
+  
+  TIMSK3 |= (1 << OCIE3B);  // enable Timer3 compare interrupt B
+
+  interrupts();  // re-enable interrupts
+  SREG = oldSREG;
+  
+  
+  //*****************************************
+  // send the pulses 
+  //*****************************************
+  
+  
+  // leadings 9ms pulse, 4.5ms gap
+  irPulse(9000,4500);
+  
+  // 8 bit address
+  for(int i=0; i<8; i++){
+      irPulse(563,563); // NEC logical 0
+  }
+ 
+  // 8 bit address' logical inverse
+  for(int i=0; i<8; i++){
+      irPulse(563,1687); // NEC logical 1
+  }
+  
+  // 8 bit command
+  for(uint8_t i=0; i<8; i++){
+    if( (code & (1<<i)) > 0 ){
+        irPulse(563,1687); // NEC logical 1
+    }
+    else{
+        irPulse(563,563);  // NEC logical 0  
+    }
+  }
+
+  // 8 bit command's logical inverse
+  for(uint8_t i=0; i<8; i++){
+    if( (code & (1<<i)) > 0 ){
+        irPulse(563,563);  // NEC logical 0
+    }
+    else{
+        irPulse(563,1687); // NEC logical 1
+    }
+  }
+  
+  // 562.5µs pulse to signal end of transmission
+  irPulse(563,10); // NEC logical 1  
+
+  //*****************************************
+  // restore Timer3 and Timer4 roles
+  //*****************************************
+  
+  // restore the timer
+  TIMSK4 = TIMSK4_store;
+  TIMSK3 = TIMSK3_store;
+  TCCR3A = TCCR3A_store;
+  TCCR3B = TCCR3B_store;
+  TCNT3 = TCNT3_store;
+}
+
+void SparkiClass::irPulse(uint16_t on, uint16_t off){
+    TIMSK3 |= (1 << OCIE3B);  // enable  38khz signal
+    delayMicroseconds(on);
+    TIMSK3 &= ~(1 << OCIE3B);  // disable 38khz signal
+    PORTD &= ~(1<<7); // make sure the LED is off
+    delayMicroseconds(off);    
+}
+
+
 void SparkiClass::startServoTimer(){
   char oldSREG = SREG;				
   noInterrupts();                                       // Disable interrupts for 16 bit register access
@@ -633,7 +731,7 @@ void SparkiClass::servo(int deg)
   unsigned long dutyCycle = 20000;
   dutyCycle *= duty;
   dutyCycle >>= 10;
-  
+   
   char oldSREG = SREG;
   noInterrupts();
   OCR1A = dutyCycle;
@@ -700,36 +798,6 @@ SIGNAL(INT6_vect) {
       }    
       lastPulseTime = currentTime;
   }
-}
-
-// setups up timer to pulse 38khz on and off in a pre-described sequence according to NEC
-// protocol
-// http://wiki.altium.com/display/ADOH/NEC+Infrared+Transmission+Protocol
-
-void SparkiClass::sendIR(uint8_t code){
-    // setup PD7 (6) to 38khz on pin  using TIMER4 COMPD
-
-  
-  OCR4D = 13;               // compare match register 16MHz/32/38000Hz
-  TCCR4D |= (1 << WGM12);   // CTC mode
-  TCCR4D = 0x06;            // CLK/32 prescaler (32 = 2^(0110-1))
-  TIMSK4 |= (1 << OCIE4D);  // enable Timer4 compare interrupt D - need to switch to PWM
-  
-  
-    
-    // go through each bit in byte, pulse appropriate IR
-    //leading pulse Xms on, Yms off
-    
-    //leading pulse of all 0
-    for(uint8_t bit = 0; bit < 8; bit++){ // for each bit in the byte
-        if(code & (1<<bit) > 0){ // determine if bit is 1
-            // bit==1: pulse for Xms on, off for Yms
-        }
-        else{
-            // bit==0: pulse for Xms on, off for Yms
-        }
-    }
-    // re-establish output on Timer 4 for 10khz control loop
 }
 
 float SparkiClass::accelX(){
@@ -812,20 +880,23 @@ uint8_t* SparkiClass::WireRead(int address, int length){
  
  // set the number if steps for the given motor 
 
+ISR(TIMER3_COMPB_vect) IR send function, operates at ~38khz when active
+{
+    PORTD ^= (1<<7); toggle the IR LED pin
+    TCNT3=0;
+}
 
 /***********************************************************************************
 The Scheduler
 Every 200uS (5,000 times a second), we update the 2 shift registers used to increase
 the amount of outputs the processor has
 ***********************************************************************************/
-
 ISR(TIMER4_COMPA_vect)          // interrupt service routine that wraps a user defined function supplied by attachInterrupt
 {
 //void SparkiClass::scheduler(){ 
-    uint8_t oldSREG = SREG;
     // Clear the timer interrupt counter
     TCNT4=0;
-    
+
 	// clear the shift register values so we can re-write them
     shift_outputs[0] = 0x00;
     shift_outputs[1] = 0x00;
@@ -903,7 +974,6 @@ ISR(TIMER4_COMPA_vect)          // interrupt service routine that wraps a user d
     SPI.transfer(shift_outputs[1]);
     SPI.transfer(shift_outputs[0]);
     PORTD |= (1<<5);    // pull PD5 (shift-register latch) high 
-    SREG = oldSREG;
 }
 
 /***********************************************************************************

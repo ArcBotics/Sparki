@@ -226,6 +226,7 @@ public:
 
 // Infrared Remote sensor
   void sendIR(uint8_t);
+  void irPulse(uint16_t, uint16_t);
 
 // Wire Functions
   void WireWrite(int, int);
@@ -310,7 +311,7 @@ public:
   
   void clearLCD();
   void updateLCD();
-  void setPixelColor();
+  void setPixelColor(uint8_t);
   
   void moveUpLine();
   
