@@ -41,8 +41,8 @@ void loop()
   case 21: sparki.moveBackward(); break;
   case 67: 
   case 71: sparki.moveRight(); break;
-  case 69:
-  case 68: sparki.moveLeft(); break;
+  case 68:
+  case 69: sparki.moveLeft(); break;
   case 64: sparki.moveStop(); 
            sparki.gripperStop();
            break;
@@ -54,7 +54,7 @@ void loop()
   // buzzer
   case 74: sparki.beep(); break;
 
-  // Servo Buttons
+  // Servo
   case 90: sparki.servo(SERVO_LEFT); break;
   case 28: sparki.servo(SERVO_CENTER); break;
   case 8: sparki.servo(SERVO_RIGHT); break;
