@@ -18,7 +18,6 @@ void loop()
             sparki.beep(); // beep!
             sparki.moveBackward(10); // back up 10 centimeters
             sparki.moveRight(30); // rotate right 30 degrees
-            delay(1000);
         }
     }
     delay(100); // wait 0.1 seconds (100 milliseconds)
