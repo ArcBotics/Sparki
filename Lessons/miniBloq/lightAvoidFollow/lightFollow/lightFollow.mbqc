@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mbqc xmlns="http://mbqc.namespaces.minibloq.org" xmlns:minibloq="http://minibloq.org" MinibloqVersion="0.82.Beta">
+    <files/>
+    <properties>
+        <canvas visible="true"/>
+        <blocks count="22"/>
+    </properties>
+    <variables>
+        <lightLeft/>
+        <lightCenter/>
+        <lightRight/>
+    </variables>
+    <blocks>
+        <ComponentStart function="Flow" commented="false" paramsCount="0" hasAddParamsButton="false" loadAction="noLoad"/>
+        <VariableInit function="Setter" commented="false" constantValue="lightLeft" paramsCount="1" hasAddParamsButton="false" loadAction="load">
+            <numberConstant function="Constant" commented="false" constantValue="0" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+        </VariableInit>
+        <VariableInit function="Setter" commented="false" constantValue="lightCenter" paramsCount="1" hasAddParamsButton="false" loadAction="load">
+            <numberConstant function="Constant" commented="false" constantValue="0" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+        </VariableInit>
+        <VariableInit function="Setter" commented="false" constantValue="lightRight" paramsCount="1" hasAddParamsButton="false" loadAction="load">
+            <numberConstant function="Constant" commented="false" constantValue="0" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+        </VariableInit>
+        <while function="Flow" commented="false" paramsCount="1" hasAddParamsButton="false" loadAction="load">
+            <boolConstantTrue function="Constant" commented="false" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+        </while>
+        <VariableSetter function="Setter" commented="false" instanceName="lightLeft" paramsCount="1" hasAddParamsButton="false" loadAction="load">
+            <lightLeft function="Sensor" commented="false" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+        </VariableSetter>
+        <VariableSetter function="Setter" commented="false" instanceName="lightCenter" paramsCount="1" hasAddParamsButton="false" loadAction="load">
+            <lightCenter function="Sensor" commented="false" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+        </VariableSetter>
+        <VariableSetter function="Setter" commented="false" instanceName="lightRight" paramsCount="1" hasAddParamsButton="false" loadAction="load">
+            <lightRight function="Sensor" commented="false" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+        </VariableSetter>
+        <if function="Flow" commented="false" paramsCount="1" hasAddParamsButton="false" loadAction="load">
+            <boolAnd function="Operation" commented="false" paramsCount="2" hasAddParamsButton="true" loadAction="load">
+                <numberGreaterThan function="Operation" commented="false" paramsCount="2" hasAddParamsButton="false" loadAction="load">
+                    <VariableGetter function="Getter" commented="false" instanceName="lightCenter" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+                    <VariableGetter function="Getter" commented="false" instanceName="lightLeft" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+                </numberGreaterThan>
+                <numberGreaterThan function="Operation" commented="false" paramsCount="2" hasAddParamsButton="false" loadAction="load">
+                    <VariableGetter function="Getter" commented="false" instanceName="lightCenter" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+                    <VariableGetter function="Getter" commented="false" instanceName="lightRight" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+                </numberGreaterThan>
+            </boolAnd>
+        </if>
+        <moveForward function="Setter" commented="false" paramsCount="1" hasAddParamsButton="false" loadAction="load">
+            <numberConstant function="Constant" commented="false" constantValue="0" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+        </moveForward>
+        <else function="Flow" commented="false" paramsCount="0" hasAddParamsButton="false" loadAction="brother"/>
+        <endIf function="Flow" commented="false" paramsCount="0" hasAddParamsButton="false" loadAction="brother"/>
+        <if function="Flow" commented="false" paramsCount="1" hasAddParamsButton="false" loadAction="load">
+            <boolAnd function="Operation" commented="false" paramsCount="2" hasAddParamsButton="true" loadAction="load">
+                <numberGreaterThan function="Operation" commented="false" paramsCount="2" hasAddParamsButton="false" loadAction="load">
+                    <VariableGetter function="Getter" commented="false" instanceName="lightLeft" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+                    <VariableGetter function="Getter" commented="false" instanceName="lightCenter" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+                </numberGreaterThan>
+                <numberGreaterThan function="Operation" commented="false" paramsCount="2" hasAddParamsButton="false" loadAction="load">
+                    <VariableGetter function="Getter" commented="false" instanceName="lightLeft" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+                    <VariableGetter function="Getter" commented="false" instanceName="lightRight" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+                </numberGreaterThan>
+            </boolAnd>
+        </if>
+        <moveLeft function="Setter" commented="false" paramsCount="1" hasAddParamsButton="false" loadAction="load">
+            <numberConstant function="Constant" commented="false" constantValue="0" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+        </moveLeft>
+        <else function="Flow" commented="false" paramsCount="0" hasAddParamsButton="false" loadAction="brother"/>
+        <endIf function="Flow" commented="false" paramsCount="0" hasAddParamsButton="false" loadAction="brother"/>
+        <if function="Flow" commented="false" paramsCount="1" hasAddParamsButton="false" loadAction="load">
+            <boolAnd function="Operation" commented="false" paramsCount="2" hasAddParamsButton="true" loadAction="load">
+                <numberGreaterThan function="Operation" commented="false" paramsCount="2" hasAddParamsButton="false" loadAction="load">
+                    <VariableGetter function="Getter" commented="false" instanceName="lightRight" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+                    <VariableGetter function="Getter" commented="false" instanceName="lightCenter" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+                </numberGreaterThan>
+                <numberGreaterThan function="Operation" commented="false" paramsCount="2" hasAddParamsButton="false" loadAction="load">
+                    <VariableGetter function="Getter" commented="false" instanceName="lightRight" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+                    <VariableGetter function="Getter" commented="false" instanceName="lightLeft" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+                </numberGreaterThan>
+            </boolAnd>
+        </if>
+        <moveRight function="Setter" commented="false" paramsCount="1" hasAddParamsButton="false" loadAction="load">
+            <numberConstant function="Constant" commented="false" constantValue="0" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+        </moveRight>
+        <else function="Flow" commented="false" paramsCount="0" hasAddParamsButton="false" loadAction="brother"/>
+        <endIf function="Flow" commented="false" paramsCount="0" hasAddParamsButton="false" loadAction="brother"/>
+        <delay function="Flow" commented="false" paramsCount="1" hasAddParamsButton="false" loadAction="load">
+            <numberConstant function="Constant" commented="false" constantValue="100" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+        </delay>
+        <whileEnd function="Flow" commented="false" paramsCount="0" hasAddParamsButton="false" loadAction="brother"/>
+    </blocks>
+</mbqc>

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mbqc xmlns="http://mbqc.namespaces.minibloq.org" xmlns:minibloq="http://minibloq.org" MinibloqVersion="0.82.Beta">
+    <files/>
+    <properties>
+        <canvas visible="true"/>
+        <blocks count="18"/>
+    </properties>
+    <variables/>
+    <blocks>
+        <ComponentStart function="Flow" commented="false" paramsCount="0" hasAddParamsButton="false" loadAction="noLoad"/>
+        <Comment function="Code" commented="false" constantValue="A value of zero means servo to the center:" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+        <servo function="Setter" commented="false" paramsCount="1" hasAddParamsButton="false" loadAction="load">
+            <numberConstant function="Constant" commented="false" constantValue="0" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+        </servo>
+        <while function="Flow" commented="false" paramsCount="1" hasAddParamsButton="false" loadAction="load">
+            <boolConstantTrue function="Constant" commented="false" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+        </while>
+        <while function="Flow" commented="false" paramsCount="1" hasAddParamsButton="false" loadAction="load">
+            <numberGreaterThan function="Operation" commented="false" paramsCount="2" hasAddParamsButton="false" loadAction="load">
+                <ping function="Sensor" commented="false" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+                <numberConstant function="Constant" commented="false" constantValue="25" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+            </numberGreaterThan>
+        </while>
+        <moveLeft function="Setter" commented="false" paramsCount="1" hasAddParamsButton="false" loadAction="load">
+            <numberConstant function="Constant" commented="false" constantValue="5" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+        </moveLeft>
+        <whileEnd function="Flow" commented="false" paramsCount="0" hasAddParamsButton="false" loadAction="brother"/>
+        <beep function="Setter" commented="false" paramsCount="2" hasAddParamsButton="false" loadAction="load">
+            <numberConstant function="Constant" commented="false" constantValue="440" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+            <numberConstant function="Constant" commented="false" constantValue="500" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+        </beep>
+        <Comment function="Code" commented="false" constantValue="Instead of stopping to rotate immediately, rotates a bit more to center the object:" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+        <moveLeft function="Setter" commented="false" paramsCount="1" hasAddParamsButton="false" loadAction="load">
+            <numberConstant function="Constant" commented="false" constantValue="15" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+        </moveLeft>
+        <Comment function="Code" commented="false" constantValue="We can try different thresholds to detect the line:" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+        <while function="Flow" commented="false" paramsCount="1" hasAddParamsButton="false" loadAction="load">
+            <numberGreaterThan function="Operation" commented="false" paramsCount="2" hasAddParamsButton="false" loadAction="load">
+                <lineCenter function="Sensor" commented="false" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+                <numberConstant function="Constant" commented="false" constantValue="700" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+            </numberGreaterThan>
+        </while>
+        <Comment function="Code" commented="false" constantValue="Now the robot advances against the object:" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+        <moveForward function="Setter" commented="false" paramsCount="1" hasAddParamsButton="false" loadAction="load">
+            <numberConstant function="Constant" commented="false" constantValue="2" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+        </moveForward>
+        <whileEnd function="Flow" commented="false" paramsCount="0" hasAddParamsButton="false" loadAction="brother"/>
+        <moveBackward function="Setter" commented="false" paramsCount="1" hasAddParamsButton="false" loadAction="load">
+            <numberConstant function="Constant" commented="false" constantValue="6" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+        </moveBackward>
+        <moveLeft function="Setter" commented="false" paramsCount="1" hasAddParamsButton="false" loadAction="load">
+            <numberConstant function="Constant" commented="false" constantValue="30" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+        </moveLeft>
+        <whileEnd function="Flow" commented="false" paramsCount="0" hasAddParamsButton="false" loadAction="brother"/>
+    </blocks>
+</mbqc>

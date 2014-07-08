@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mbqc xmlns="http://mbqc.namespaces.minibloq.org" xmlns:minibloq="http://minibloq.org" MinibloqVersion="0.82.Beta">
+    <files/>
+    <properties>
+        <canvas visible="true"/>
+        <blocks count="15"/>
+    </properties>
+    <variables/>
+    <blocks>
+        <ComponentStart function="Flow" commented="false" paramsCount="0" hasAddParamsButton="false" loadAction="noLoad"/>
+        <servo function="Setter" commented="false" paramsCount="1" hasAddParamsButton="false" loadAction="load">
+            <numberConstant function="Constant" commented="false" constantValue="0" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+        </servo>
+        <while function="Flow" commented="false" paramsCount="1" hasAddParamsButton="false" loadAction="load">
+            <boolConstantTrue function="Constant" commented="false" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+        </while>
+        <RGB function="Setter" commented="false" paramsCount="3" hasAddParamsButton="false" loadAction="load">
+            <numberConstant function="Constant" commented="false" constantValue="0" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+            <numberConstant function="Constant" commented="false" constantValue="255" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+            <numberConstant function="Constant" commented="false" constantValue="0" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+        </RGB>
+        <moveForward function="Setter" commented="false" paramsCount="1" hasAddParamsButton="false" loadAction="load">
+            <numberConstant function="Constant" commented="false" constantValue="0" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+        </moveForward>
+        <if function="Flow" commented="false" paramsCount="1" hasAddParamsButton="false" loadAction="load">
+            <numberLowerThan function="Operation" commented="false" paramsCount="2" hasAddParamsButton="false" loadAction="load">
+                <ping function="Sensor" commented="false" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+                <numberConstant function="Constant" commented="false" constantValue="20" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+            </numberLowerThan>
+        </if>
+        <RGB function="Setter" commented="false" paramsCount="3" hasAddParamsButton="false" loadAction="load">
+            <numberConstant function="Constant" commented="false" constantValue="255" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+            <numberConstant function="Constant" commented="false" constantValue="0" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+            <numberConstant function="Constant" commented="false" constantValue="0" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+        </RGB>
+        <beep function="Setter" commented="false" paramsCount="2" hasAddParamsButton="false" loadAction="load">
+            <numberConstant function="Constant" commented="false" constantValue="440" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+            <numberConstant function="Constant" commented="false" constantValue="250" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+        </beep>
+        <moveBackward function="Setter" commented="false" paramsCount="1" hasAddParamsButton="false" loadAction="load">
+            <numberConstant function="Constant" commented="false" constantValue="10" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+        </moveBackward>
+        <moveRight function="Setter" commented="false" paramsCount="1" hasAddParamsButton="false" loadAction="load">
+            <numberConstant function="Constant" commented="false" constantValue="30" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+        </moveRight>
+        <delay function="Flow" commented="false" paramsCount="1" hasAddParamsButton="false" loadAction="load">
+            <numberConstant function="Constant" commented="false" constantValue="1000" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+        </delay>
+        <else function="Flow" commented="false" paramsCount="0" hasAddParamsButton="false" loadAction="brother"/>
+        <endIf function="Flow" commented="false" paramsCount="0" hasAddParamsButton="false" loadAction="brother"/>
+        <delay function="Flow" commented="false" paramsCount="1" hasAddParamsButton="false" loadAction="load">
+            <numberConstant function="Constant" commented="false" constantValue="100" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+        </delay>
+        <whileEnd function="Flow" commented="false" paramsCount="0" hasAddParamsButton="false" loadAction="brother"/>
+    </blocks>
+</mbqc>
