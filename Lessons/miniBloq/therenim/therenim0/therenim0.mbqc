@@ -14,12 +14,12 @@
         <beep function="Setter" commented="false" paramsCount="2" hasAddParamsButton="false" loadAction="load">
             <numberMul function="Operation" commented="false" paramsCount="2" hasAddParamsButton="true" loadAction="load">
                 <ping function="Sensor" commented="false" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
-                <numberConstant function="Constant" commented="false" constantValue="25" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+                <numberConstant function="Constant" commented="false" constantValue="10" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
             </numberMul>
-            <numberConstant function="Constant" commented="false" constantValue="50" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+            <numberConstant function="Constant" commented="false" constantValue="10" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
         </beep>
         <delay function="Flow" commented="false" paramsCount="1" hasAddParamsButton="false" loadAction="load">
-            <numberConstant function="Constant" commented="false" constantValue="50" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
+            <numberConstant function="Constant" commented="false" constantValue="10" paramsCount="0" hasAddParamsButton="false" loadAction="load"/>
         </delay>
         <whileEnd function="Flow" commented="false" paramsCount="0" hasAddParamsButton="false" loadAction="brother"/>
     </blocks>
