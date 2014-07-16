@@ -1,3 +1,15 @@
+/*******************************************
+ Maze Solver
+ 
+ Sparki has an array of infrared sensors
+ underneath. It can use these to solve
+ a printed maze. More info on the following
+ link: 
+ 
+ http://arcbotics.com/lessons/maze-solving/
+ 
+********************************************/
+
 #include <Sparki.h> // include the sparki library
 
 const int threshold = 500; //line sensors thereshold.
