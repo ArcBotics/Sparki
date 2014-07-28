@@ -46,30 +46,6 @@
 #define VOLTAGE_DIVIDER     4.7  	 // using 47k and 10k resistors
 #define MAX_BAT_V          (VOLTAGE_DIVIDER * ADC_REFERENCE) 
 
-// defining the buttons on the shipped-with remote control
-#define REMOTE_ERROR    -2
-#define REMOTE_REPEAT   -3
-#define REMOTE_POWER    69
-#define REMOTE_MENU     71
-#define REMOTE_TEST     68
-#define REMOTE_PLUS     64
-#define REMOTE_BACK     67
-#define REMOTE_REWIND   7
-#define REMOTE_PLAY     21
-#define REMOTE_FF       9
-#define REMOTE_0        22
-#define REMOTE_MINUS    25
-#define REMOTE_C        13
-#define REMOTE_1        12
-#define REMOTE_2        24
-#define REMOTE_3        94
-#define REMOTE_4        8
-#define REMOTE_5        28
-#define REMOTE_6        90
-#define REMOTE_7        66
-#define REMOTE_8        82
-#define REMOTE_9        74
-
 // define the shift registers pin output values for the RGB arrays
 #define RGB_R 0x01 // pin value of the Red LED on the RGB on the shift register
 #define RGB_G 0x02 // pin value of the Green LED on the RGB on the shift register
