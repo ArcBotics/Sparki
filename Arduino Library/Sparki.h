@@ -1,6 +1,10 @@
 #ifndef Sparki_h
 #define Sparki_h
 
+//#define NO_LCD    // disables the LCD, frees up 3088 Bytes Flash Memory, 1k RAM
+//#define NO_ACCEL  // disables the Accelerometer, frees up 598 Bytes Flash Memory
+//#define NO_MAG    // disables the Magnetometer, frees up 2500 Bytes Flash Memory
+
 #include "Arduino.h"
 #include "Print.h"
 
@@ -85,19 +89,17 @@
 
 // properties about the robot in cm
 #define PI 3.14159
-const int   STEPS_PER_REV          = 4096; // steps for wheels to revolve 360 degrees
-const float WHEEL_DIAMETER_CM      = 5.00;
-const float WHEEL_CIRCUMFERENCE_CM = WHEEL_DIAMETER_CM * PI;
-const float CM_PER_STEP            = WHEEL_CIRCUMFERENCE_CM / STEPS_PER_REV;
-const float STEPS_PER_CM            = STEPS_PER_REV / WHEEL_CIRCUMFERENCE_CM;
-
-const float TRACK_WIDTH_CM         = 8.51;              //tire seperation in cm  
-const float STEPS_PER_ROTATION     = (TRACK_WIDTH_CM / WHEEL_DIAMETER_CM) * STEPS_PER_REV ;  // robot rotation
-const float STEPS_PER_DEGREE       = STEPS_PER_ROTATION / 360.0;         // robot rotation
-const float CM_PER_DEGREE          = WHEEL_CIRCUMFERENCE_CM / 360.0;     // wheel movement per degree rotation of robot 
-
-//#define SPARKI_CORRECTION_VALUE 1.0319444
-#define SPARKI_CORRECTION_VALUE 1.0
+#define STEPS_PER_REV 4096          // steps for wheels to revolve 360 degrees
+#define WHEEL_DIAMETER_CM 5.00
+#define TRACK_WIDTH_CM 8.51         //tire seperation in cm  
+//const float WHEEL_CIRCUMFERENCE_CM = WHEEL_DIAMETER_CM * PI;
+//const float CM_PER_STEP            = WHEEL_CIRCUMFERENCE_CM / STEPS_PER_REV;
+//const float CM_PER_DEGREE          = WHEEL_CIRCUMFERENCE_CM / 360.0;     // wheel movement per degree rotation of robot 
+const float STEPS_PER_CM             = STEPS_PER_REV/(WHEEL_DIAMETER_CM*PI);
+//const float STEPS_PER_ROTATION     = (TRACK_WIDTH_CM / WHEEL_DIAMETER_CM) * STEPS_PER_REV ;  // robot rotation
+//const float STEPS_PER_DEGREE       = STEPS_PER_ROTATION / 360.0;         // robot rotation
+const float STEPS_PER_DEGREE         = (TRACK_WIDTH_CM / WHEEL_DIAMETER_CM) * STEPS_PER_REV / 360.0;
+const float STEPS_PER_ARM_CM         = 100; // number of steps to move the arms 1cm open or close
 
 #define DISTANCE_TIME_COSNTANT 222.222222
 #define DEGREES_TIME_COSNTANT  21.388888
@@ -193,6 +195,7 @@ class SparkiClass : public Print {
 
 public:
   SparkiClass();
+  float readBattery();
   int ping_single();
   int ping();
   void begin();
@@ -284,7 +287,9 @@ public:
   void moveRight();
 
   void gripperOpen();
+  void gripperOpen(float);
   void gripperClose();
+  void gripperClose(float);
   void gripperStop();
   
   void moveStop();
@@ -340,7 +345,7 @@ public:
   void drawString_P(uint8_t x, uint8_t line, const char *c);
   void drawBitmap(uint8_t x, uint8_t y, 
 		  const uint8_t *bitmap, uint8_t w, uint8_t h);
-
+  
 private:    
   static void scheduler();
 

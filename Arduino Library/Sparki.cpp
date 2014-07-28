@@ -10,9 +10,23 @@
 #include <stdlib.h>
 #include <SPI.h>
 
-#include "SparkiWire.h"
-#include "SparkiEEPROM.h"
+
+
+#ifndef NO_ACCEL
 #include "Sparkii2c.h"
+// shares the values of the accelerometers
+volatile float xAxisAccel;
+volatile float yAxisAccel;
+volatile float zAxisAccel;
+#endif
+
+#ifndef NO_MAG
+#include "SparkiWire.h"
+// variables for the magnetometer
+volatile uint8_t mag_buffer[RawMagDataLength];
+#endif
+
+#include "SparkiEEPROM.h"
 
 static int8_t step_dir[3];                 // -1 = ccw, 1 = cw  
 
@@ -28,7 +42,6 @@ static volatile uint8_t speed_array[3][SPEED_ARRAY_LENGTH];
                                         // for each motor, how many 200uS waits between each step. 
                                         // Cycles through an array of 10 of these counts to average 
                                         // for better speed control
-
 
 static volatile int8_t step_index[3];       // index into _steps array  
 static uint8_t _steps_right[9];                   // bytes defining stepper coil activations
@@ -56,13 +69,6 @@ volatile uint16_t pulsesIR[50][2]; // LOW,HIGH
 volatile uint8_t currentPulse = 0;
 volatile uint8_t haltIRRead = 0;
 
-// shares the values of the accelerometers
-volatile float xAxisAccel;
-volatile float yAxisAccel;
-volatile float zAxisAccel;
-
-// variables for the magnetometer
-volatile uint8_t mag_buffer[RawMagDataLength];
 
 // values for the servo
 volatile int8_t servo_deg_offset = 0;
@@ -152,8 +158,10 @@ void SparkiClass::begin( ) {
   _steps_right[7] = 0x09;
   _steps_right[8] = 0x00;
 
+  #ifndef NO_LCD
   beginDisplay();
   updateLCD();
+  #endif
 
   // Setup initial Stepper settings
   motor_speed[MOTOR_LEFT] = motor_speed[MOTOR_RIGHT] = motor_speed[MOTOR_GRIPPER] = move_speed;
@@ -180,13 +188,29 @@ void SparkiClass::begin( ) {
   EIMSK |= (1 << INT6); 
   
   interrupts();
-  
+  #ifndef NO_ACCEL
   initAccelerometer();
+  #endif
   
+  #ifndef NO_MAG
   WireWrite(ConfigurationRegisterB, (0x01 << 5));
   WireWrite(ModeRegister, Measurement_Continuous);  
   readMag(); // warm it up  
+  #endif
 
+}
+
+float SparkiClass::readBattery(){
+    float voltage=0;
+    
+    pinMode(BATTERY_MONITOR, INPUT);
+    for(uint8_t i=0; i<10; i++){
+        voltage += analogRead(10);
+        delay(1);
+    }
+    voltage = voltage/10.0;
+    pinMode(BATTERY_MONITOR, OUTPUT);
+    return voltage;
 }
 
 void SparkiClass::setMux(uint8_t A, uint8_t B, uint8_t C){
@@ -312,9 +336,9 @@ void SparkiClass::RGB(uint8_t R, uint8_t G, uint8_t B)
     if(B > 100){
         B = 100;
     }
-	RGB_vals[0] = R;
-	RGB_vals[1] = G;
-	RGB_vals[2] = B;
+	RGB_vals[0] = int(R/2.0);
+	RGB_vals[1] = int(G/2.0);
+	RGB_vals[2] = int(B/2.0);
 }
 
 /*
@@ -456,10 +480,20 @@ void SparkiClass::gripperOpen()
 {
   motorRotate(MOTOR_GRIPPER, DIR_CCW, move_speed, ULONG_MAX);
 }
+void SparkiClass::gripperOpen(float cm)
+{
+  motorRotate(MOTOR_GRIPPER, DIR_CCW, move_speed, (unsigned long)(cm*STEPS_PER_ARM_CM));
+}
+
 void SparkiClass::gripperClose()
 {
   motorRotate(MOTOR_GRIPPER, DIR_CW, move_speed, ULONG_MAX);
 }
+void SparkiClass::gripperClose(float cm)
+{
+  motorRotate(MOTOR_GRIPPER, DIR_CW, move_speed, (unsigned long)(cm*STEPS_PER_ARM_CM));
+}
+
 void SparkiClass::gripperStop()
 {
   motorStop(MOTOR_GRIPPER);
@@ -473,8 +507,8 @@ void SparkiClass::speed(uint8_t speed)
 
 void SparkiClass::motorRotate(int motor, int direction, int speed, long steps)
 {
-   Serial.print("Motor ");Serial.print(motor); Serial.print(" rotate, dir= "); 
-   Serial.print(direction); Serial.print(", steps= "); Serial.println(steps);
+   //Serial.print("Motor ");Serial.print(motor); Serial.print(" rotate, dir= "); 
+   //Serial.print(direction); Serial.print(", steps= "); Serial.println(steps);
    
    motor_speed[motor] = speed; // speed in 1-100 precent
    
@@ -506,10 +540,10 @@ void SparkiClass::motorRotate(int motor, int direction, int speed, long steps)
       isRunning[motor] = true;
       SREG = oldSREG; sei(); 
 
-      Serial.print("base: ");
-      Serial.print(base_waits);
-      Serial.print(", remainder: ");
-      Serial.println(remainder_waits);
+      //Serial.print("base: ");
+      //Serial.print(base_waits);
+      //Serial.print(", remainder: ");
+      //Serial.println(remainder_waits);
    }
    delay(1);
 }
@@ -803,19 +837,7 @@ SIGNAL(INT6_vect) {
   }
 }
 
-float SparkiClass::accelX(){
-    readAccelData();
-    return -xAxisAccel*9.8;
-}
-float SparkiClass::accelY(){
-    readAccelData();
-    return -yAxisAccel*9.8;
-}
-float SparkiClass::accelZ(){
-    readAccelData();
-    return -zAxisAccel*9.8;
-}
-
+#ifndef NO_MAG
 float SparkiClass::readMag(){
   WireRead(DataRegisterBegin, RawMagDataLength);
   xAxisMag = ((mag_buffer[0] << 8) | mag_buffer[1]) * M_SCALE;
@@ -876,7 +898,7 @@ uint8_t* SparkiClass::WireRead(int address, int length){
   }
   Wire.endTransmission();
 }
-
+#endif
  /*
   * private functions
   */
@@ -915,7 +937,7 @@ ISR(TIMER4_COMPA_vect)          // interrupt service routine that wraps a user d
 		shift_outputs[RGB_SHIFT] |= RGB_B;
     }
     RGB_timer++;
-    if(RGB_timer == 100){
+    if(RGB_timer == 50){
     	RGB_timer = 0;
     }
 
@@ -982,10 +1004,18 @@ ISR(TIMER4_COMPA_vect)          // interrupt service routine that wraps a user d
 /***********************************************************************************
 Display Library
 ***********************************************************************************/
+
 #define ST7565_STARTBYTES 1
 
 uint8_t is_reversed = 0;
 
+#ifdef NO_LCD
+const uint8_t pagemap[] = {};
+uint8_t font[] PROGMEM = {};
+uint8_t st7565_buffer[] = {};
+#endif
+
+#ifndef NO_LCD
 // a handy reference to where the pages are on the screen
 const uint8_t pagemap[] = { 3, 2, 1, 0, 7, 6, 5, 4 };
 
@@ -1323,6 +1353,8 @@ uint8_t st7565_buffer[1024] = {
 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
 };
 
+#endif
+
 // reduces how much is refreshed, which speeds it up!
 // originally derived from Steve Evans/JCW's mod but cleaned up and
 // optimized
@@ -1438,7 +1470,7 @@ void  SparkiClass::drawChar(uint8_t x, uint8_t line, char c) {
     x++;
   }
 
-  updateBoundingBox(x, line*8, x+5, line*8 + 8);
+  updateBoundingBox(0, line*8, x+5, line*8 + 8);
 }
 
 // bresenham's algorithm - thx wikpedia
@@ -1815,6 +1847,10 @@ void SparkiClass::clear_display(void) {
 }
 
 
+/***********************************************************************************
+Accelerometer Library
+***********************************************************************************/
+#ifndef NO_ACCEL
 void SparkiClass::readAccelData()
 {
   int accelCount[3];
@@ -1864,6 +1900,19 @@ int SparkiClass::initAccelerometer()
   else{
     return -1;
   }
+}
+
+float SparkiClass::accelX(){
+    readAccelData();
+    return -xAxisAccel*9.8;
+}
+float SparkiClass::accelY(){
+    readAccelData();
+    return -yAxisAccel*9.8;
+}
+float SparkiClass::accelZ(){
+    readAccelData();
+    return -zAxisAccel*9.8;
 }
 
 // Read i registers sequentially, starting at address into the dest byte array
@@ -1942,3 +1991,4 @@ void SparkiClass::readi2cRegister(unsigned char address, unsigned char data, uin
 
   i2cSendStop();
 }
+#endif
