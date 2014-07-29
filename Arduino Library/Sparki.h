@@ -21,6 +21,7 @@
 #define SERVO_LEFT          -80
 #define SERVO_CENTER        0
 #define SERVO_RIGHT         80
+#define MAX_SERVO_OFFSET    30
 
 // defining the MUX pins
 #define MUX_ANALOG		A2 // PF5

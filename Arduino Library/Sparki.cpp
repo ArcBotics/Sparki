@@ -115,6 +115,15 @@ void SparkiClass::begin( ) {
   else{
     servo_deg_offset = EEPROM.read(0);
   }
+  
+  // keep offset from going too off if EEPROM corrupted
+  if (servo_deg_offset > MAX_SERVO_OFFSET){
+    servo_deg_offset = 0;
+  }
+  if (servo_deg_offset < -MAX_SERVO_OFFSET){
+    servo_deg_offset = 0;
+  }
+  
   //servo(SERVO_CENTER);
     
   
