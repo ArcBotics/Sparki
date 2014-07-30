@@ -129,8 +129,6 @@ void loop()
 {
   readSensors();
   
-  //##Put everything inside a subroutine:
-  
   switch (state)
   {
     case FOLLOWING_LINE:
