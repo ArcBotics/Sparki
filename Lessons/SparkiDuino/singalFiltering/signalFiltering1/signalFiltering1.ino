@@ -1,12 +1,11 @@
 #include <Sparki.h> // include the sparki library
 
-const unsigned int numberOfReadings = 3;
 
 void setup()
 {
 }
 
-int average()
+int average(unsigned int numberOfReadings)
 {
   float result = 0;
   for (unsigned int i=0; i < numberOfReadings; i++)
@@ -19,7 +18,7 @@ int average()
 
 void loop()
 {
-    float cm = average();
+    float cm = average(3); // read 3 times the sensor and return the average (or arithmetic mean)
     
     sparki.clearLCD();
        
