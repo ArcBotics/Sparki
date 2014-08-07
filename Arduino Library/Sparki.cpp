@@ -209,7 +209,7 @@ void SparkiClass::begin( ) {
 
 }
 
-float SparkiClass::readBattery(){
+float SparkiClass::systemVoltage(){
     float voltage=0;
     
     pinMode(BATTERY_MONITOR, INPUT);
@@ -217,8 +217,11 @@ float SparkiClass::readBattery(){
         voltage += analogRead(10);
         delay(1);
     }
-    voltage = voltage/10.0;
     pinMode(BATTERY_MONITOR, OUTPUT);
+    
+    voltage = voltage/10.0;
+    voltage = voltage*0.00868; // convert reading to voltage
+
     return voltage;
 }
 

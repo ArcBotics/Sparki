@@ -76,7 +76,8 @@ const float STEPS_PER_CM             = STEPS_PER_REV/(WHEEL_DIAMETER_CM*PI);
 //const float STEPS_PER_ROTATION     = (TRACK_WIDTH_CM / WHEEL_DIAMETER_CM) * STEPS_PER_REV ;  // robot rotation
 //const float STEPS_PER_DEGREE       = STEPS_PER_ROTATION / 360.0;         // robot rotation
 const float STEPS_PER_DEGREE         = (TRACK_WIDTH_CM / WHEEL_DIAMETER_CM) * STEPS_PER_REV / 360.0;
-const float STEPS_PER_ARM_CM         = 100; // number of steps to move the arms 1cm open or close
+const float STEPS_PER_ARM_CM         = 650;
+
 
 #define DISTANCE_TIME_COSNTANT 222.222222
 #define DEGREES_TIME_COSNTANT  21.388888
@@ -172,7 +173,7 @@ class SparkiClass : public Print {
 
 public:
   SparkiClass();
-  float readBattery();
+  float systemVoltage();
   int ping_single();
   int ping();
   void begin();
