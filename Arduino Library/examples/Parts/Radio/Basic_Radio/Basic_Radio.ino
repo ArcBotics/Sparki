@@ -14,6 +14,7 @@ Radio radio;
 
 void setup()
 {
+  Serial.begin(9600);
   radio.begin();
 }
 
@@ -21,13 +22,13 @@ char start[] = "Hello";
 void loop()
 {
 // Uncomment this code if receiving
-  if ( radio.available() ){
-    Serial.println( radio.readChar() );
-  }
+//  if ( radio.available() ){
+//    Serial.println( radio.readChar() );
+//  }
 
 // Uncomment this code if transmitting  
-  for(int i=0; i<5; i++){
-    radio.writeChar(start[i]);
-  } 
+//  for(int i=0; i<5; i++){
+//    radio.writeChar(start[i]);
+//  } 
   delay(1000);
 }
