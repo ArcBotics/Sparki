@@ -23,4 +23,8 @@ void loop()
   
   sparki.gripperStop();  // stop the grippers from moving
   delay(1000);           // for 1 second (1000 milliseconds)
+
+  sparki.gripperOpen(3);  // open the robot's gripper by 3 centimeters
+  sparki.gripperClose(3); // close the robot's gripper by 3 centimeters
+  delay(1000);           // wait 1 second (1000 milliseconds)
 }
