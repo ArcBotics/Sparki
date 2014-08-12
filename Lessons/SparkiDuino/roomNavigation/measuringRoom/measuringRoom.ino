@@ -49,7 +49,7 @@ void showSensorsAndState()
   sparki.updateLCD();
 }
 
-void showMapData()
+void showRoomData()
 {
   sparki.clearLCD();
 
@@ -93,45 +93,64 @@ void centerRobotOverHomeMark()
     showSensorsAndState();
   }
   sparki.beep();
+  showSensorsAndState();
 }
 
-void measureRoom()
+void measureRoom(bool robotAtHome)
 {
   // Starts to measure the X longitude: 
   sparki.servo(SERVO_CENTER);
   delay(servoDelay);
   ping = sparki.ping(); //"ping" variable is used to show the sensor value on the LCD.
   roomMaxX = rangerToCentreDistanceFront + ping;
+  showRoomData();
 
   // Measures the Y longitude: 
   sparki.servo(SERVO_RIGHT);
   delay(servoDelay);
   ping = sparki.ping();
   roomMaxY = rangerToCentreDistanceSide + ping;
+  showRoomData();
 
   sparki.servo(SERVO_LEFT);
   delay(2*servoDelay); // Twice the time of 1/4 of revolution rotation.
   ping = sparki.ping();
   roomMaxY += rangerToCentreDistanceSide + ping;
+  showRoomData();
 
-  // Finishes to measure the X longitude and leaves the ultrasonic sensor centered:
+  // Finishes to measure the X longitude:
   sparki.servo(SERVO_CENTER);
   delay(servoDelay);
-  sparki.moveLeft(180);
+  sparki.moveLeft(90); // The robot rotation has more relative error than the servo rotation:
+  sparki.servo(SERVO_LEFT); // so we rotate the robot 90 degrees and the servo the other 90 degrees.
+  delay(servoDelay);
   ping = sparki.ping(); //"ping" variable is used to show the sensor value on the LCD.
   roomMaxX += rangerToCentreDistanceFront + ping;
+  
+  // If at home, centers the robot again:
+  if (robotAtHome)
+  {
+    sparki.moveLeft();
+    centerRobotOverHomeMark();
+    sparki.moveStop();
+  }
+  
+  // Leaves the ultrasonic sensor centered:
+  sparki.servo(SERVO_CENTER);
+  delay(servoDelay);  
 }
 
 void setup()
 {
   centerRobotOverHomeMark();
-  measureRoom();
+  delay(1500); // Give time to the human to take her/his hands off.
+  measureRoom(true);
 }
 
 void loop()
 {
   ping = sparki.ping(); //update the ultrasonic sensor data to be displayed.
-  showMapData();
+  showRoomData();
   delay(50);
 }
 
