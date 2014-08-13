@@ -1,6 +1,9 @@
 #include <Sparki.h>  // Include the sparki library.
 
+const float pi = 3.14159265358979323846;
+
 // Robot data:
+const float initialHeading = 90.0; // Intial heading in the current coordinates system: 90 degs = pi/2 [rad]. 
 const int threshold = 500; // Line and edge sensors thereshold [0 - 1015 w/out units].
 const int servoDelay = 350; // Minumum time to give to the servo to rotate 90 degrees [ms].
 const int rangerToCentreDistanceFront = 4; // Distance from the measuring edge of the (centered) ultrasonic sensor to the robot's centre [cm].
@@ -14,6 +17,9 @@ bool  edgeLeft = false,
       edgeRight = false;
 int ping = 0; // [cm].
 String state = "undefined";
+float heading = initialHeading; // [degs].
+int posX = 0; // [cm].
+int posY = 0; // [cm].
 
 // Map variables:
 int roomMaxX = 0; // [cm].
@@ -55,9 +61,16 @@ void showRoomData()
 
   sparki.print("roomMaxX=");
   sparki.println(roomMaxX);
-
   sparki.print("roomMaxY=");
   sparki.println(roomMaxY);
+
+  sparki.print("posX=");
+  sparki.println(posX);
+  sparki.print("posY=");
+  sparki.println(posY);
+
+  sparki.print("heading=");
+  sparki.println(heading);
   
   printPingData();
   
@@ -96,6 +109,16 @@ void centerRobotOverHomeMark()
   showSensorsAndState();
 }
 
+void rotate(float angle)
+{
+  if (angle > 0.0)
+    sparki.moveLeft(angle);
+  else
+    sparki.moveRight(-angle);
+
+  heading += angle;
+}
+
 void measureRoom(bool robotAtHome)
 {
   // Starts to measure the Y longitude: 
@@ -116,19 +139,22 @@ void measureRoom(bool robotAtHome)
   delay(2*servoDelay); // Twice the time of 1/4 of revolution rotation.
   ping = sparki.ping();
   roomMaxX += rangerToCentreDistanceSide + ping;
+  posX = rangerToCentreDistanceSide + ping;
   showRoomData();
 
   // Finishes to measure the Y longitude:
-  sparki.moveLeft(90); // The robot rotation has more relative error than the servo rotation:
+  rotate(90); // The robot rotation has more relative error than the servo rotation:
   delay(servoDelay); // Just to stop the robot for a few milliseconds, so it can measure distance.
   ping = sparki.ping(); //"ping" variable is used to show the sensor value on the LCD.
   roomMaxY += rangerToCentreDistanceSide + ping;
+  posY = rangerToCentreDistanceSide + ping;
   
   // If at home, centers the robot again:
   if (robotAtHome)
   {
     sparki.moveLeft();
     centerRobotOverHomeMark();
+    heading = initialHeading; // Special case with external mark centering: the heading goes back to it's intial state.
     sparki.moveStop();
   }
   
