@@ -4,7 +4,7 @@
 const int threshold = 500; // Line and edge sensors thereshold [0 - 1015 w/out units].
 const int servoDelay = 350; // Minumum time to give to the servo to rotate 90 degrees [ms].
 const int rangerToCentreDistanceFront = 4; // Distance from the measuring edge of the (centered) ultrasonic sensor to the robot's centre [cm].
-const int rangerToCentreDistanceSide = 3; // Distance from the measuring edge of the (90 degrees rotated) ultrasonic sensor to the robot's centre [cm].
+const int rangerToCentreDistanceSide = 2; // Distance from the measuring edge of the (rotated) ultrasonic sensor to the robot's centre [cm]. Rounded to floor.
 
 // Robot variables:
 bool  edgeLeft = false,
