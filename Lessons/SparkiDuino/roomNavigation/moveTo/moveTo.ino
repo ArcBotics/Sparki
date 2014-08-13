@@ -2,12 +2,16 @@
 
 const float pi = 3.14159265358979323846;
 
-// Robot data:
+// Robot + External World data:
 const float initialHeading = 90.0; // Intial heading in the current coordinates system: 90 degs = pi/2 [rad]. 
+
+// Robot data:
 const int threshold = 500; // Line and edge sensors thereshold [0 - 1015 w/out units].
 const int servoDelay = 350; // Minumum time to give to the servo to rotate 90 degrees [ms].
+const int robotRadius = 9; // Necessary radius to rotate, from the robot's center [cm].
 const int rangerToCentreDistanceFront = 4; // Distance from the measuring edge of the (centered) ultrasonic sensor to the robot's centre [cm].
 const int rangerToCentreDistanceSide = 2; // Distance from the measuring edge of the (rotated) ultrasonic sensor to the robot's centre [cm]. Rounded to floor.
+const int rangerToFrontDistance = 5; // Distnace from the measuring edge of the (centered) ultrasonic sensor to the gripper's extreme [cm].
 
 // Robot variables:
 bool  edgeLeft = false,
@@ -163,11 +167,28 @@ void measureRoom(bool robotAtHome)
   delay(servoDelay);  
 }
 
+// Non diagonal (Cartessian) moveTo version. There are no negative possible positions in this coordinates system:
+void moveTo(unsigned int x, unsigned int y)
+{
+  rotate(-heading); // Rotates the robot to zero heading.
+  sparki.moveForward(x - posX);
+  posX = x;
+  showRoomData();
+  rotate(90);
+  showRoomData();
+  sparki.moveForward(y - posY);
+  posY = y;
+  showRoomData();
+}
+
 void setup()
 {
   centerRobotOverHomeMark();
   delay(1500); // Give time to the human to take her/his hands off.
   measureRoom(true);
+  
+  // Tests:
+  moveTo(roomMaxX/2, roomMaxY/2);
 }
 
 void loop()
