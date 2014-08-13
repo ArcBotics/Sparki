@@ -170,6 +170,7 @@ void measureRoom(bool robotAtHome)
 // Non diagonal (Cartessian) moveTo version. There are no negative possible positions in this coordinates system:
 void moveTo(unsigned int x, unsigned int y)
 {
+  // No security or other checks in this first version:
   rotate(-heading); // Rotates the robot to zero heading.
   sparki.moveForward(x - posX);
   posX = x;
