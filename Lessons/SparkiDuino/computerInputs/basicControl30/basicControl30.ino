@@ -1,12 +1,13 @@
 #include <Sparki.h>  // include the sparki library
 
-#define serial Serial
-//#define serial Serial1
+//#define serial Serial
+#define serial Serial1
 
 int edgeThreshold = 200;
 
 void setup()
 {
+  serial.begin(9600); // necessary for the Bluetooth.
   sparki.servo(SERVO_CENTER);
 }
 
