@@ -366,7 +366,7 @@ void SparkiClass::moveRight(float deg)
   }
   else{
       if(deg < 0){
-        moveLeft(deg);
+        moveLeft(-deg);
       }
       else{
           stepRight(steps);
@@ -397,7 +397,7 @@ void SparkiClass::moveLeft(float deg)
   }
   else{
       if(deg < 0){
-        moveRight(deg);
+        moveRight(-deg);
       }
       else{
           stepLeft(steps);
@@ -428,7 +428,7 @@ void SparkiClass::moveForward(float cm)
   }
   else{
       if(cm < 0){
-        moveBackward(cm);
+        moveBackward(-cm);
       }
       else{
           stepForward(steps);
@@ -459,7 +459,7 @@ void SparkiClass::moveBackward(float cm)
   }
   else{
       if(cm < 0){
-        moveForward(cm);
+        moveForward(-cm);
       }
       else{
           stepBackward(steps);
