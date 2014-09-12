@@ -201,11 +201,9 @@ void moveTo(int x, int y)
   showRoomData(x - posX, y - posY);
 
   showRoomData(x - posX, y - posY);
+  rotate(90);
   if ((y - posY) > 0)
-  {
-    rotate(90);
     sparki.moveForward(y - posY);
-  }
   else if ((y - posY) < 0)
     sparki.moveBackward(posY - y);
   posY = y;
@@ -218,33 +216,33 @@ void beepAndWait(int delayTime = 250)
   delay(delayTime);
 }
 
-void findDoors()
+void findDoors(int servoAngle, bool forward, int maxX = 0)
 {
   state = "findDoors";
+  sparki.servo(SERVO_CENTER);
+  delay(servoDelay);
+  int frontDistance = sparki.ping();
   
-  int frontDistance = roomMaxX;
-  while (frontDistance > robotRadius)
+  //##Put here the condition for the backward version, or make a new findDoors function for this case.
+  
+  while (frontDistance > (robotRadius - 3)) // An smaller radius improves precission on door position.
   {
+    if (forward)
+      sparki.moveForward();
+    else
+      sparki.moveBackward(maxX);
+
+    sparki.servo(servoAngle);
+    delay(servoDelay);
+    ping = sparki.ping();
+    showRoomData();
+
     sparki.servo(SERVO_CENTER);
     delay(servoDelay);
     frontDistance = sparki.ping();
-    ping = frontDistance; //Just to show the ping value on the LCD.
-    showRoomData();
-
-    moveTo(posX + 1, posY);
-    sparki.servo(SERVO_LEFT);
-    delay(servoDelay);
-    ping = sparki.ping();
-    //##Process ping data.
-    showRoomData();
-    
-    sparki.servo(SERVO_RIGHT);
-    delay(servoDelay);
-    ping = sparki.ping();
-    //##Process ping data.
-    showRoomData();
   }
-  
+  sparki.moveStop();
+  showRoomData();
   beepAndWait();
 }
 
@@ -254,7 +252,10 @@ void setup()
   delay(1500); // Give time to the human to take her/his hands off.
   measureRoom(true);
   
-  findDoors();
+  //Find doors in this room:
+  int initialX = posX;
+  findDoors(SERVO_LEFT, true);
+  findDoors(SERVO_RIGHT, false, initialX);
 }
 
 void loop()
