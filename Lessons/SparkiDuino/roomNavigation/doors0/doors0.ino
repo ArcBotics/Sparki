@@ -195,16 +195,18 @@ void moveTo(int x, int y)
   rotate(-heading); // Rotates the robot to zero heading.
   if ((x - posX) > 0)
     sparki.moveForward(x - posX);
-  else
+  else if ((x - posX) < 0)
     sparki.moveBackward(posX - x);
   posX = x;
   showRoomData(x - posX, y - posY);
 
-  rotate(90);
   showRoomData(x - posX, y - posY);
   if ((y - posY) > 0)
+  {
+    rotate(90);
     sparki.moveForward(y - posY);
-  else
+  }
+  else if ((y - posY) < 0)
     sparki.moveBackward(posY - y);
   posY = y;
   showRoomData(x - posX, y - posY);
@@ -216,25 +218,43 @@ void beepAndWait(int delayTime = 250)
   delay(delayTime);
 }
 
+void findDoors()
+{
+  state = "findDoors";
+  
+  int frontDistance = roomMaxX;
+  while (frontDistance > robotRadius)
+  {
+    sparki.servo(SERVO_CENTER);
+    delay(servoDelay);
+    frontDistance = sparki.ping();
+    ping = frontDistance; //Just to show the ping value on the LCD.
+    showRoomData();
+
+    moveTo(posX + 1, posY);
+    sparki.servo(SERVO_LEFT);
+    delay(servoDelay);
+    ping = sparki.ping();
+    //##Process ping data.
+    showRoomData();
+    
+    sparki.servo(SERVO_RIGHT);
+    delay(servoDelay);
+    ping = sparki.ping();
+    //##Process ping data.
+    showRoomData();
+  }
+  
+  beepAndWait();
+}
+
 void setup()
 {
   centerRobotOverHomeMark();
   delay(1500); // Give time to the human to take her/his hands off.
   measureRoom(true);
   
-  // Tests:
-  for (int i=0; i<=3; i++)
-  {
-    moveTo(roomMaxX/2, roomMaxY/2);
-    beepAndWait();
-    moveTo(roomMaxX/2 + 5, roomMaxY/2 + 5);
-    //beepAndWait(2000); //##Debug
-    beepAndWait();
-    moveTo(roomMaxX/2, roomMaxY/2);
-    beepAndWait();
-    moveTo(homeX, homeY);
-    beepAndWait();
-  }
+  findDoors();
 }
 
 void loop()
