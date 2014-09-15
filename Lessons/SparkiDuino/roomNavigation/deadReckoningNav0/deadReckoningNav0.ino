@@ -46,7 +46,7 @@ Position doors[roomsNumber*2]; // Array for doors positions. roomsNumber*2 is al
 int connectedRooms[roomsNumber][roomsNumber]; // This array is a table which stores the door number that connects each pair of rooms.
 
 //Route results:
-int roomsRoute[roomsNumber]; //Array to stoer a room numbers route.
+int roomsRoute[roomsNumber]; //Array to store a room-number based route.
 Position route[roomsNumber]; // Array for route points.
 
 void printPingData()
@@ -190,13 +190,26 @@ int getRoom(int x, int y)
   return -1; //Error: point does not belong to any existing room.
 }
 
-void getRoomsRoute(int sourceRoom, int destRoom)
+bool areRoomsConnected(int roomA, int roomB)
 {
-  //The result of this function is stored in the roomsRoute[] array:
-  for (int i=0; i < roomsNumber; i++)
+  return connectedRooms[roomA][roomB] != -1;
+}
+
+//The result of this function is stored in the roomsRoute[] array:
+void getRoomsRoute(int sourceRoom, int destRoom, int routeIndex = 0)
+{
+  if (areRoomsConnected(sourceRoom, destRoom))
   {
-    roomsRoute[i] = //##
-  }  
+    roomsRoute[routeIndex] = destRoom;
+  }
+  else
+  {
+    if ( (routeIndex+1) <  roomsNumber)
+    {
+      //In our map, rooms connect with other room numbers only through rooms with smaller numbers (that's why destRoom-1 should work):
+      getRoomsRoute(sourceRoom, destRoom-1, routeIndex+1);
+    }
+  }
 }
 
 // Given a position, returns the route to it (points including doors) in the route[] global array:
@@ -216,11 +229,13 @@ void getRoute(int x, int y)
   getRoomsRoute(currentRoom, destRoom);
   
   int doorNumber = 0;
-  for (i=currentRoom; i <= destRoom; i++)
+  i = 0;
+  while( (roomsRoute[i] != -1) && (roomsRoute[i+1] != -1) )
   {
     doorNumber = connectedRooms[roomsRoute[i]][roomsRoute[i+1]];
-    route[i-currentRoom].x = doors[doorNumber].x; //route[] is zero based: that's why using "i-currentRoom".
-    route[i-currentRoom].y = doors[doorNumber].y;
+    route[i].x = doors[doorNumber].x;
+    route[i].y = doors[doorNumber].y;
+    i++;
   }
 }
 
