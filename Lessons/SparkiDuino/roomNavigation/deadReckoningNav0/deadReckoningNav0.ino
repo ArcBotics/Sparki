@@ -31,6 +31,13 @@ int homeY = 0; // [cm].
 int roomMaxX = 0; // [cm].
 int roomMaxY = 0; // [cm].
 
+typedef struct 
+{
+  int minX, maxX;
+  int minY, maxY;
+} Room;
+
+Room rooms[3]; // Array of room data. The max number of rooms can be changed, of course.
 
 void printPingData()
 {
@@ -216,71 +223,13 @@ void beepAndWait(int delayTime = 250)
   delay(delayTime);
 }
 
-void findDoors(int servoAngle)
-{
-  state = "findDoors";
-  sparki.servo(SERVO_CENTER);
-  delay(servoDelay);
-  int frontDistance = sparki.ping();
-  
-  sparki.moveForward();
-  while (frontDistance > (robotRadius - 3)) // An smaller radius improves precission on door position.
-  {
-    sparki.servo(servoAngle);
-    delay(servoDelay);
-    ping = sparki.ping();
-    showRoomData();
-
-    sparki.servo(SERVO_CENTER);
-    delay(servoDelay);
-    frontDistance = sparki.ping();
-  }
-  
-  /* ##Future improvements:
-  //Updates the position, based on the heading and on the ping readings:
-  //Note 0: It's a precondition that the room has to be measured previous to the
-  //call to this function.
-  //Note 1: This simple conditions work only on Cartesian moves of the robot:
-  sparki.moveStop();
-  beepAndWait();  
-  frontDistance = sparki.ping();
-  if (heading != initialHeading)
-    posX = roomMaxX - frontDistance - rangerToCentreDistanceFront;
-  else
-    posY = roomMaxY - frontDistance - rangerToCentreDistanceFront;
-  */
-
-  showRoomData();
-}
-
 void setup()
 {
   centerRobotOverHomeMark();
   delay(1500); // Give time to the human to take her/his hands off.
   measureRoom(true);
   
-  //Find doors in this room:
-  findDoors(SERVO_LEFT);
-  rotate(180.0);
-  findDoors(SERVO_LEFT);
   
-  //##Debug:
-  /*
-  sparki.clearLCD();
-  sparki.print("initialX=");
-  sparki.println(initialX);  
-  sparki.print("initialY=");
-  sparki.println(initialY);  
-  sparki.println(String("state=") + state);
-  sparki.updateLCD();
-  */
-  showRoomData();
-  delay(30000);
-  
-//  moveTo(posX, initialY);
-  
-//  findDoors(SERVO_RIGHT);
-//  moveTo(initialX, posY);
 }
 
 void loop()
