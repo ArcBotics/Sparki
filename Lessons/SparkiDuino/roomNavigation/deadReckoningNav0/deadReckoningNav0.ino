@@ -45,6 +45,7 @@ int roomMaxY = 0; // [cm].
 
 const int roomsNumber = 3;
 Room rooms[roomsNumber]; // Array of room data. The max number of rooms can be changed, of course.
+Position doors[roomsNumber*2]; // Array for doors positions. roomsNumber is always bigger than the real possible number of rooms.
 Position route[roomsNumber]; // Array for route points.
 
 void printPingData()
@@ -246,14 +247,35 @@ void navigate()
   }
 }
 
+int getRoom(int x, int y)
+{
+  for (int i=0; i<=roomsNumber; i++)
+  {
+    if ( (rooms[i].minX <= x) && (x <= rooms[i].maxX) && (rooms[i].minY <= y) && (y <= rooms[i].maxY) )
+      return i;
+  }
+  return -1; //Error: point does not belong to any existing room.
+}
+
 // Give a position, returns the route to it (points including doors) in the route[] global array:
 void getRoute(int x, int y)
 {
-  //##Implement.
+  int currentRoom = getRoom(pos.x, pos.y);
+  int targetRoom = getRoom(x, y);
+  
+  //##
 }
 
 void setup()
 {
+  /* ##
+  for (int i=0; i<roomsNumber*2; i++)
+  {
+    doors[i].x = 0;
+    doors[i].y = 0;
+  }
+  */
+  
   pos.x = 0;
   pos.y = 0;
   home.x = 0;
