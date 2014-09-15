@@ -216,22 +216,16 @@ void beepAndWait(int delayTime = 250)
   delay(delayTime);
 }
 
-void findDoors(int servoAngle, bool forward, int maxX = 0)
+void findDoors(int servoAngle)
 {
   state = "findDoors";
   sparki.servo(SERVO_CENTER);
   delay(servoDelay);
   int frontDistance = sparki.ping();
   
-  //##Put here the condition for the backward version, or make a new findDoors function for this case.
-  
+  sparki.moveForward();
   while (frontDistance > (robotRadius - 3)) // An smaller radius improves precission on door position.
   {
-    if (forward)
-      sparki.moveForward();
-    else
-      sparki.moveBackward(maxX);
-
     sparki.servo(servoAngle);
     delay(servoDelay);
     ping = sparki.ping();
@@ -241,9 +235,20 @@ void findDoors(int servoAngle, bool forward, int maxX = 0)
     delay(servoDelay);
     frontDistance = sparki.ping();
   }
+  
+  //Updates the position, based on the heading and on the ping readings:
+  //Note 0: It's a precondition that the room has to be measured previous to the
+  //call to this function.
+  //Note 1: This simple conditions work only on Cartesian moves of the robot:
   sparki.moveStop();
+  beepAndWait();  
+  frontDistance = sparki.ping();
+  if (heading != initialHeading)
+    posX = roomMaxX - frontDistance - rangerToCentreDistanceFront;
+  else
+    posY = roomMaxY - frontDistance - rangerToCentreDistanceFront;
+
   showRoomData();
-  beepAndWait();
 }
 
 void setup()
@@ -253,9 +258,25 @@ void setup()
   measureRoom(true);
   
   //Find doors in this room:
-  int initialX = posX;
-  findDoors(SERVO_LEFT, true);
-  findDoors(SERVO_RIGHT, false, initialX);
+  findDoors(SERVO_LEFT);
+  
+  //##Debug:
+  /*
+  sparki.clearLCD();
+  sparki.print("initialX=");
+  sparki.println(initialX);  
+  sparki.print("initialY=");
+  sparki.println(initialY);  
+  sparki.println(String("state=") + state);
+  sparki.updateLCD();
+  */
+  showRoomData();
+  delay(30000);
+  
+//  moveTo(posX, initialY);
+  
+//  findDoors(SERVO_RIGHT);
+//  moveTo(initialX, posY);
 }
 
 void loop()
