@@ -25,6 +25,11 @@ typedef struct
   int x, y;  // [cm].
 } Position;
 
+typedef struct
+{
+  int roomA, roomB;
+} ConnectedRooms;
+
 // Robot variables:
 bool  edgeLeft = false,
       lineLeft = false,
@@ -35,17 +40,18 @@ int ping = 0; // [cm].
 String state = "undefined";
 float heading = initialHeading; // [degs].
 Position pos;
-Position home;
 int walkedDistanceX = 0; // [cm]
 int walkedDistanceY = 0; // [cm]
 
-// Map data: ##
-int roomMaxX = 0; // [cm].
-int roomMaxY = 0; // [cm].
-
+//Map:
+Position home;
 const int roomsNumber = 3;
 Room rooms[roomsNumber]; // Array of room data. The max number of rooms can be changed, of course.
-Position doors[roomsNumber*2]; // Array for doors positions. roomsNumber is always bigger than the real possible number of rooms.
+Position doors[roomsNumber*2]; // Array for doors positions. roomsNumber*2 is always bigger than the real possible number of rooms.
+ConnectedRooms connectedRooms[roomsNumber*2]; // Same as the number of doors.
+
+//Route results:
+int roomsRoute[roomsNumber]; //Array to stoer a room numbers route.
 Position route[roomsNumber]; // Array for route points.
 
 void printPingData()
@@ -77,7 +83,7 @@ void showSensorsAndState()
   sparki.updateLCD();
 }
 
-void showRoomData(float value0 = 0.0, float value1 = 0.0)
+void showData(float value0 = 0.0, float value1 = 0.0)
 {
   sparki.clearLCD();
 
@@ -87,13 +93,6 @@ void showRoomData(float value0 = 0.0, float value1 = 0.0)
     sparki.println(value0);
     sparki.print("goToY=");
     sparki.println(value1);
-  }
-  else // Default:
-  {
-    sparki.print("roomMaxX=");
-    sparki.println(roomMaxX);
-    sparki.print("roomMaxY=");
-    sparki.println(roomMaxY);
   }
 
   sparki.print("pos.x=");
@@ -151,61 +150,11 @@ void rotate(float angle)
   heading += angle;
 }
 
-void measureRoom(bool robotAtHome)
-{
-  state = "measureRoom";
-  showSensorsAndState();
-  
-  // Starts to measure the Y longitude: 
-  sparki.servo(SERVO_CENTER);
-  delay(servoDelay);
-  ping = sparki.ping(); //"ping" variable is used to show the sensor value on the LCD.
-  roomMaxY = rangerToCentreDistanceFront + ping;
-  showRoomData();
-
-  // Measures the X longitude: 
-  sparki.servo(SERVO_RIGHT);
-  delay(servoDelay);
-  ping = sparki.ping();
-  roomMaxX = rangerToCentreDistanceSide + ping;
-  showRoomData();
-
-  sparki.servo(SERVO_LEFT);
-  delay(2*servoDelay); // Twice the time of 1/4 of revolution rotation.
-  ping = sparki.ping();
-  roomMaxX += rangerToCentreDistanceSide + ping;
-  pos.x = rangerToCentreDistanceSide + ping;
-  showRoomData();
-
-  // Finishes to measure the Y longitude:
-  rotate(90); // The robot rotation has more relative error than the servo rotation:
-  delay(servoDelay); // Just to stop the robot for a few milliseconds, so it can measure distance.
-  ping = sparki.ping(); //"ping" variable is used to show the sensor value on the LCD.
-  roomMaxY += rangerToCentreDistanceSide + ping;
-  pos.y = rangerToCentreDistanceSide + ping;
-  
-  // If at home, centers the robot again:
-  if (robotAtHome)
-  {
-    sparki.moveLeft();
-    centerRobotOverHomeMark();
-    heading = initialHeading; // Special case with external mark centering: the heading goes back to it's intial state.
-    sparki.moveStop();
-    
-    home.x = pos.x;
-    home.y = pos.y;
-  }
-  
-  // Leaves the ultrasonic sensor centered:
-  sparki.servo(SERVO_CENTER);
-  delay(servoDelay);  
-}
-
 // Non diagonal (Cartesian) moveTo version. There are no negative possible positions in this coordinates system:
 void moveTo(int x, int y)
 {
   state = "moveTo";
-  showRoomData(x - pos.x, y - pos.y);
+  showData(x - pos.x, y - pos.y);
  
    //To trask accumulative errors:
   walkedDistanceX += abs(x - pos.x);
@@ -218,16 +167,16 @@ void moveTo(int x, int y)
   else if ((x - pos.x) < 0)
     sparki.moveBackward(pos.x - x);
   pos.x = x;
-  showRoomData(x - pos.x, y - pos.y);
+  showData(x - pos.x, y - pos.y);
 
-  showRoomData(x - pos.x, y - pos.y);
+  showData(x - pos.x, y - pos.y);
   rotate(90);
   if ((y - pos.y) > 0)
     sparki.moveForward(y - pos.y);
   else if ((y - pos.y) < 0)
     sparki.moveBackward(pos.y - y);
   pos.y = y;
-  showRoomData(x - pos.x, y - pos.y);
+  showData(x - pos.x, y - pos.y);
  }
 
 void beepAndWait(int delayTime = 250)
@@ -243,7 +192,7 @@ void navigate()
   {
     moveTo(route[i].x, route[i].y);
     beepAndWait();
-    showRoomData();
+    showData();
   }
 }
 
@@ -257,40 +206,71 @@ int getRoom(int x, int y)
   return -1; //Error: point does not belong to any existing room.
 }
 
+void getRoomsRoute(int sourceRoom, int destRoom)
+{
+  //##
+}
+
 // Give a position, returns the route to it (points including doors) in the route[] global array:
 void getRoute(int x, int y)
 {
+  //Find the rooms where the robot nees to go to reach the goal:
   int currentRoom = getRoom(pos.x, pos.y);
-  int targetRoom = getRoom(x, y);
+  int destRoom = getRoom(x, y);
+  getRoomsRoute(currentRoom, destRoom);
   
-  //##
+  for (int i=0; i <= roomsNumber-1; i++)
+  {
+    //##roomsRoute[i]
+  }  
 }
 
 void setup()
 {
-  /* ##
-  for (int i=0; i<roomsNumber*2; i++)
-  {
-    doors[i].x = 0;
-    doors[i].y = 0;
-  }
-  */
+  // Initialize the map (this has to be done by the user):
+  // Rooms:
+  rooms[0].minX = 0; rooms[0].minY = 0;
+  rooms[0].maxX = 45; rooms[0].maxY = 31;
+
+  rooms[1].minX = 0; rooms[1].minY = 31;
+  rooms[1].maxX = 45; rooms[1].maxY = 63;
+
+  rooms[2].minX = 45; rooms[2].minY = 0;
+  rooms[2].maxX = 90; rooms[2].maxY = 63;
+
+  //Doors (each array entry contains the center of a door):
+  doors[0].x = 25; doors[0].y = 31;
+  doors[1].x = 45; doors[1].y = 46;
   
+  //Connected rooms (these data can be calculated by the program in the future):
+  connectedRooms[0].roomA = 0; connectedRooms[0].roomB = 1; //Connections are reciprocal.
+  connectedRooms[1].roomA = 1; connectedRooms[1].roomB = 0;
+  
+  connectedRooms[2].roomA = 1; connectedRooms[2].roomB = 2;
+  connectedRooms[3].roomA = 2; connectedRooms[3].roomB = 1;
+
+  connectedRooms[4].roomA = -1; connectedRooms[4].roomB = -1;
+  connectedRooms[5].roomA = -1; connectedRooms[5].roomB = -1; //"-1" means that this is a not used room connection.
+
+  //Home:
+  home.x = 10; home.y = 10;
+
+  //Initializes the robot:  
   pos.x = 0;
   pos.y = 0;
-  home.x = 0;
-  home.y = 0;
+  sparki.servo(SERVO_CENTER);
   centerRobotOverHomeMark();
   delay(1500); // Give time to the human to take her/his hands off.
-  measureRoom(true);
+  beepAndWait();
   
-  
+  //User application:
+  //##.
 }
 
 void loop()
 {
   ping = sparki.ping(); //update the ultrasonic sensor data to be displayed.
-  showRoomData();
+  showData();
   delay(50);
 }
 
