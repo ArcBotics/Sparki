@@ -43,7 +43,7 @@ const int roomsNumber = 3;
 Position home;
 Room rooms[roomsNumber]; // Array of room data. The max number of rooms can be changed, of course.
 Position doors[roomsNumber*2]; // Array for doors positions. roomsNumber*2 is always bigger than the real possible number of rooms.
-bool connectedRooms[roomsNumber][roomsNumber]; // Same as the number of doors.
+int connectedRooms[roomsNumber][roomsNumber]; // This array is a table which stores the door number that connects each pair of rooms.
 
 //Route results:
 int roomsRoute[roomsNumber]; //Array to stoer a room numbers route.
@@ -198,28 +198,45 @@ void getRoomsRoute(int sourceRoom, int destRoom)
   }  
 }
 
-// Give a position, returns the route to it (points including doors) in the route[] global array:
+// Given a position, returns the route to it (points including doors) in the route[] global array:
 void getRoute(int x, int y)
 {
+  //Resess the result array:
+  int i = 0;
+  for (i=0; i < roomsNumber; i++)
+  {
+    route[i].x = -1; //Invalid position to indicate that the robot should not move.
+    route[i].y = -1; //Invalid position to indicate that the robot should not move.
+  }
+  
   //Find the rooms where the robot nees to go to reach the goal:
   int currentRoom = getRoom(pos.x, pos.y);
   int destRoom = getRoom(x, y);
   getRoomsRoute(currentRoom, destRoom);
   
-  for (int i=currentRoom; i < roomsNumber-1; i++)
+  int doorNumber = 0;
+  for (i=currentRoom; i <= destRoom; i++)
   {
-    //##roomsRoute[i]
-  }  
+    doorNumber = connectedRooms[roomsRoute[i]][roomsRoute[i+1]];
+    route[i-currentRoom].x = doors[doorNumber].x;
+    route[i-currentRoom].y = doors[doorNumber].y;
+  }
 }
 
 void navigate()
 {
+  int x=0, y=0;
   // Uses the global array route[]:
   for (int i=0; i < roomsNumber; i++)
   {
-    moveTo(route[i].x, route[i].y);
-    beepAndWait();
-    showData();
+    x = route[i].x;
+    y = route[i].y;
+    if ( (x>0) && (y>0) ) //Invalid positions in the route[] array are marked with x=-1 and y=-1.
+    {
+      moveTo(x, y);
+      beepAndWait();
+      showData();
+    }
   }
 }
 
@@ -241,17 +258,17 @@ void setup()
   doors[1].x = 45; doors[1].y = 46;
   
   //Connected rooms (these data can be calculated by the program in the future):
-  connectedRooms[0][0] = true; // A room is always connectes with itself.
-  connectedRooms[0][1] = true;
-  connectedRooms[0][2] = false;
+  connectedRooms[0][0] = -1; // A room does not have a door to connect with itself.
+  connectedRooms[0][1] = 0; // door[0] connects room[0] with room[1].
+  connectedRooms[0][2] = -1; //No door connection between room[0] and room[2].
 
-  connectedRooms[1][0] = true;
-  connectedRooms[1][1] = true;
-  connectedRooms[1][2] = true;
+  connectedRooms[1][0] = 0;
+  connectedRooms[1][1] = -1;
+  connectedRooms[1][2] = 1; //door[1] connects room[1] with room[2].
 
-  connectedRooms[2][0] = false;
-  connectedRooms[2][1] = true;
-  connectedRooms[2][2] = true;
+  connectedRooms[2][0] = -1;
+  connectedRooms[2][1] = 1;
+  connectedRooms[2][2] = -1;
 
   //Home:
   home.x = 10; home.y = 10;
