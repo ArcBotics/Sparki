@@ -192,16 +192,17 @@ int getRoom(int x, int y)
 
 void getRoomsRoute(int sourceRoom, int destRoom)
 {
-  for (int i=0; i < roomsNumber*2; i++)
+  //The result of this function is stored in the roomsRoute[] array:
+  for (int i=0; i < roomsNumber; i++)
   {
-    //##roomsRoute[i]
+    roomsRoute[i] = //##
   }  
 }
 
 // Given a position, returns the route to it (points including doors) in the route[] global array:
 void getRoute(int x, int y)
 {
-  //Resess the result array:
+  //Resets the result array:
   int i = 0;
   for (i=0; i < roomsNumber; i++)
   {
@@ -209,7 +210,7 @@ void getRoute(int x, int y)
     route[i].y = -1; //Invalid position to indicate that the robot should not move.
   }
   
-  //Find the rooms where the robot nees to go to reach the goal:
+  //Find the rooms where the robot needs to go to reach the goal:
   int currentRoom = getRoom(pos.x, pos.y);
   int destRoom = getRoom(x, y);
   getRoomsRoute(currentRoom, destRoom);
@@ -218,22 +219,25 @@ void getRoute(int x, int y)
   for (i=currentRoom; i <= destRoom; i++)
   {
     doorNumber = connectedRooms[roomsRoute[i]][roomsRoute[i+1]];
-    route[i-currentRoom].x = doors[doorNumber].x;
+    route[i-currentRoom].x = doors[doorNumber].x; //route[] is zero based: that's why using "i-currentRoom".
     route[i-currentRoom].y = doors[doorNumber].y;
   }
 }
 
-void navigate()
+void navigate(int x, int y)
 {
-  int x=0, y=0;
-  // Uses the global array route[]:
+  // Calculates the route:
+  getRoute(x, y);
+  
+  //Moves through the calculated route (stored in the route[] array):
+  Position tempPos;
   for (int i=0; i < roomsNumber; i++)
   {
-    x = route[i].x;
-    y = route[i].y;
-    if ( (x>0) && (y>0) ) //Invalid positions in the route[] array are marked with x=-1 and y=-1.
+    tempPos.x = route[i].x;
+    tempPos.y = route[i].y;
+    if ( (tempPos.x>0) && (tempPos.y>0) ) //Invalid positions in the route[] array are marked with x=-1 and y=-1.
     {
-      moveTo(x, y);
+      moveTo(tempPos.x, tempPos.y);
       beepAndWait();
       showData();
     }
@@ -282,7 +286,13 @@ void setup()
   beepAndWait();
   
   //User application:
-  //##.
+  //##Document these tests in the webpage and delete these comments...
+  //##Test 1: moving the robot to the doors.
+  moveTo(doors[0].x, doors[0].y);
+  moveTo(doors[1].x, doors[1].y);
+
+  //##Test 2: finding the rooms for different points:
+  //##  
 }
 
 void loop()
