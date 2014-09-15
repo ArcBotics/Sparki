@@ -5,14 +5,6 @@ const float pi = 3.14159265358979323846;
 // Robot + External World data:
 const float initialHeading = 90.0; // Intial heading in the current coordinates system: 90 degs = pi/2 [rad]. 
 
-// Robot data:
-const int threshold = 500; // Line and edge sensors thereshold [0 - 1015 w/out units].
-const int servoDelay = 350; // Minumum time to give to the servo to rotate 90 degrees [ms].
-const int robotRadius = 9; // Necessary radius to rotate, from the robot's center [cm].
-const int rangerToCentreDistanceFront = 4; // Distance from the measuring edge of the (centered) ultrasonic sensor to the robot's centre [cm].
-const int rangerToCentreDistanceSide = 2; // Distance from the measuring edge of the (rotated) ultrasonic sensor to the robot's centre [cm]. Rounded to floor.
-const int rangerToFrontDistance = 5; // Distnace from the measuring edge of the (centered) ultrasonic sensor to the gripper's extreme [cm].
-
 // Types:
 typedef struct 
 {
@@ -25,10 +17,13 @@ typedef struct
   int x, y;  // [cm].
 } Position;
 
-typedef struct
-{
-  int roomA, roomB;
-} ConnectedRooms;
+// Robot data:
+const int threshold = 500; // Line and edge sensors thereshold [0 - 1015 w/out units].
+const int servoDelay = 350; // Minumum time to give to the servo to rotate 90 degrees [ms].
+const int robotRadius = 9; // Necessary radius to rotate, from the robot's center [cm].
+const int rangerToCentreDistanceFront = 4; // Distance from the measuring edge of the (centered) ultrasonic sensor to the robot's centre [cm].
+const int rangerToCentreDistanceSide = 2; // Distance from the measuring edge of the (rotated) ultrasonic sensor to the robot's centre [cm]. Rounded to floor.
+const int rangerToFrontDistance = 5; // Distnace from the measuring edge of the (centered) ultrasonic sensor to the gripper's extreme [cm].
 
 // Robot variables:
 bool  edgeLeft = false,
@@ -44,11 +39,11 @@ int walkedDistanceX = 0; // [cm]
 int walkedDistanceY = 0; // [cm]
 
 //Map:
-Position home;
 const int roomsNumber = 3;
+Position home;
 Room rooms[roomsNumber]; // Array of room data. The max number of rooms can be changed, of course.
 Position doors[roomsNumber*2]; // Array for doors positions. roomsNumber*2 is always bigger than the real possible number of rooms.
-ConnectedRooms connectedRooms[roomsNumber*2]; // Same as the number of doors.
+bool connectedRooms[roomsNumber][roomsNumber]; // Same as the number of doors.
 
 //Route results:
 int roomsRoute[roomsNumber]; //Array to stoer a room numbers route.
@@ -185,20 +180,9 @@ void beepAndWait(int delayTime = 250)
   delay(delayTime);
 }
 
-void navigate()
-{
-  // Uses the global array route[]:
-  for (int i=0; i<=roomsNumber; i++)
-  {
-    moveTo(route[i].x, route[i].y);
-    beepAndWait();
-    showData();
-  }
-}
-
 int getRoom(int x, int y)
 {
-  for (int i=0; i<=roomsNumber; i++)
+  for (int i=0; i < roomsNumber; i++)
   {
     if ( (rooms[i].minX <= x) && (x <= rooms[i].maxX) && (rooms[i].minY <= y) && (y <= rooms[i].maxY) )
       return i;
@@ -208,7 +192,10 @@ int getRoom(int x, int y)
 
 void getRoomsRoute(int sourceRoom, int destRoom)
 {
-  //##
+  for (int i=0; i < roomsNumber*2; i++)
+  {
+    //##roomsRoute[i]
+  }  
 }
 
 // Give a position, returns the route to it (points including doors) in the route[] global array:
@@ -219,10 +206,21 @@ void getRoute(int x, int y)
   int destRoom = getRoom(x, y);
   getRoomsRoute(currentRoom, destRoom);
   
-  for (int i=0; i <= roomsNumber-1; i++)
+  for (int i=currentRoom; i < roomsNumber-1; i++)
   {
     //##roomsRoute[i]
   }  
+}
+
+void navigate()
+{
+  // Uses the global array route[]:
+  for (int i=0; i < roomsNumber; i++)
+  {
+    moveTo(route[i].x, route[i].y);
+    beepAndWait();
+    showData();
+  }
 }
 
 void setup()
@@ -243,14 +241,17 @@ void setup()
   doors[1].x = 45; doors[1].y = 46;
   
   //Connected rooms (these data can be calculated by the program in the future):
-  connectedRooms[0].roomA = 0; connectedRooms[0].roomB = 1; //Connections are reciprocal.
-  connectedRooms[1].roomA = 1; connectedRooms[1].roomB = 0;
-  
-  connectedRooms[2].roomA = 1; connectedRooms[2].roomB = 2;
-  connectedRooms[3].roomA = 2; connectedRooms[3].roomB = 1;
+  connectedRooms[0][0] = true; // A room is always connectes with itself.
+  connectedRooms[0][1] = true;
+  connectedRooms[0][2] = false;
 
-  connectedRooms[4].roomA = -1; connectedRooms[4].roomB = -1;
-  connectedRooms[5].roomA = -1; connectedRooms[5].roomB = -1; //"-1" means that this is a not used room connection.
+  connectedRooms[1][0] = true;
+  connectedRooms[1][1] = true;
+  connectedRooms[1][2] = true;
+
+  connectedRooms[2][0] = false;
+  connectedRooms[2][1] = true;
+  connectedRooms[2][2] = true;
 
   //Home:
   home.x = 10; home.y = 10;
