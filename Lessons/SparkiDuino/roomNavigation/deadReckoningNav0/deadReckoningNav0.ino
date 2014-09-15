@@ -13,6 +13,18 @@ const int rangerToCentreDistanceFront = 4; // Distance from the measuring edge o
 const int rangerToCentreDistanceSide = 2; // Distance from the measuring edge of the (rotated) ultrasonic sensor to the robot's centre [cm]. Rounded to floor.
 const int rangerToFrontDistance = 5; // Distnace from the measuring edge of the (centered) ultrasonic sensor to the gripper's extreme [cm].
 
+// Types:
+typedef struct 
+{
+  int minX, maxX;  // [cm].
+  int minY, maxY;  // [cm].
+} Room;
+
+typedef struct
+{
+  int x, y;  // [cm].
+} Position;
+
 // Robot variables:
 bool  edgeLeft = false,
       lineLeft = false,
@@ -22,22 +34,18 @@ bool  edgeLeft = false,
 int ping = 0; // [cm].
 String state = "undefined";
 float heading = initialHeading; // [degs].
-int posX = 0; // [cm].
-int posY = 0; // [cm].
-int homeX = 0; // [cm].
-int homeY = 0; // [cm].
+Position pos;
+Position home;
+int walkedDistanceX = 0; // [cm]
+int walkedDistanceY = 0; // [cm]
 
-// Map variables:
+// Map data: ##
 int roomMaxX = 0; // [cm].
 int roomMaxY = 0; // [cm].
 
-typedef struct 
-{
-  int minX, maxX;
-  int minY, maxY;
-} Room;
-
-Room rooms[3]; // Array of room data. The max number of rooms can be changed, of course.
+const int roomsNumber = 3;
+Room rooms[roomsNumber]; // Array of room data. The max number of rooms can be changed, of course.
+Position route[roomsNumber]; // Array for route points.
 
 void printPingData()
 {
@@ -87,10 +95,10 @@ void showRoomData(float value0 = 0.0, float value1 = 0.0)
     sparki.println(roomMaxY);
   }
 
-  sparki.print("posX=");
-  sparki.println(posX);
-  sparki.print("posY=");
-  sparki.println(posY);
+  sparki.print("pos.x=");
+  sparki.println(pos.x);
+  sparki.print("pos.y=");
+  sparki.println(pos.y);
 
   sparki.print("heading=");
   sparki.println(heading);
@@ -165,7 +173,7 @@ void measureRoom(bool robotAtHome)
   delay(2*servoDelay); // Twice the time of 1/4 of revolution rotation.
   ping = sparki.ping();
   roomMaxX += rangerToCentreDistanceSide + ping;
-  posX = rangerToCentreDistanceSide + ping;
+  pos.x = rangerToCentreDistanceSide + ping;
   showRoomData();
 
   // Finishes to measure the Y longitude:
@@ -173,7 +181,7 @@ void measureRoom(bool robotAtHome)
   delay(servoDelay); // Just to stop the robot for a few milliseconds, so it can measure distance.
   ping = sparki.ping(); //"ping" variable is used to show the sensor value on the LCD.
   roomMaxY += rangerToCentreDistanceSide + ping;
-  posY = rangerToCentreDistanceSide + ping;
+  pos.y = rangerToCentreDistanceSide + ping;
   
   // If at home, centers the robot again:
   if (robotAtHome)
@@ -183,8 +191,8 @@ void measureRoom(bool robotAtHome)
     heading = initialHeading; // Special case with external mark centering: the heading goes back to it's intial state.
     sparki.moveStop();
     
-    homeX = posX;
-    homeY = posY;
+    home.x = pos.x;
+    home.y = pos.y;
   }
   
   // Leaves the ultrasonic sensor centered:
@@ -196,26 +204,30 @@ void measureRoom(bool robotAtHome)
 void moveTo(int x, int y)
 {
   state = "moveTo";
-  showRoomData(x - posX, y - posY);
+  showRoomData(x - pos.x, y - pos.y);
+ 
+   //To trask accumulative errors:
+  walkedDistanceX += abs(x - pos.x);
+  walkedDistanceY += abs(y - pos.y);
   
   // No security or other checks in this first version:
   rotate(-heading); // Rotates the robot to zero heading.
-  if ((x - posX) > 0)
-    sparki.moveForward(x - posX);
-  else if ((x - posX) < 0)
-    sparki.moveBackward(posX - x);
-  posX = x;
-  showRoomData(x - posX, y - posY);
+  if ((x - pos.x) > 0)
+    sparki.moveForward(x - pos.y);
+  else if ((x - pos.x) < 0)
+    sparki.moveBackward(pos.x - x);
+  pos.x = x;
+  showRoomData(x - pos.x, y - pos.y);
 
-  showRoomData(x - posX, y - posY);
+  showRoomData(x - pos.x, y - pos.y);
   rotate(90);
-  if ((y - posY) > 0)
-    sparki.moveForward(y - posY);
-  else if ((y - posY) < 0)
-    sparki.moveBackward(posY - y);
-  posY = y;
-  showRoomData(x - posX, y - posY);
-}
+  if ((y - pos.y) > 0)
+    sparki.moveForward(y - pos.y);
+  else if ((y - pos.y) < 0)
+    sparki.moveBackward(pos.y - y);
+  pos.y = y;
+  showRoomData(x - pos.x, y - pos.y);
+ }
 
 void beepAndWait(int delayTime = 250)
 {
@@ -223,8 +235,29 @@ void beepAndWait(int delayTime = 250)
   delay(delayTime);
 }
 
+void navigate()
+{
+  // Uses the global array route[]:
+  for (int i=0; i<=roomsNumber; i++)
+  {
+    moveTo(route[i].x, route[i].y);
+    beepAndWait();
+    showRoomData();
+  }
+}
+
+// Give a position, returns the route to it (points including doors) in the route[] global array:
+void getRoute(int x, int y)
+{
+  //##Implement.
+}
+
 void setup()
 {
+  pos.x = 0;
+  pos.y = 0;
+  home.x = 0;
+  home.y = 0;
   centerRobotOverHomeMark();
   delay(1500); // Give time to the human to take her/his hands off.
   measureRoom(true);
