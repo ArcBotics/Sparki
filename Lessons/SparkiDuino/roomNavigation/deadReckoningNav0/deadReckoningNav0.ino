@@ -15,6 +15,7 @@ typedef struct
 typedef struct
 {
   int x, y;  // [cm].
+  int heading; // [deg].
 } Position;
 
 // Robot data:
@@ -34,7 +35,7 @@ bool  edgeLeft = false,
 int ping = 0; // [cm].
 String state = "undefined";
 float heading = initialHeading; // [degs].
-Position pos;
+Position pos; // Integer heading will not be used for the robot. Float heading used instead.
 int walkedDistanceX = 0; // [cm]
 int walkedDistanceY = 0; // [cm]
 
@@ -145,16 +146,8 @@ void rotate(float angle)
   heading += angle;
 }
 
-// Non diagonal (Cartesian) moveTo version. There are no negative possible positions in this coordinates system:
-void moveTo(int x, int y)
+void moveX(int x)
 {
-  state = "moveTo";
-  showData(x - pos.x, y - pos.y);
- 
-   //To trask accumulative errors:
-  walkedDistanceX += abs(x - pos.x);
-  walkedDistanceY += abs(y - pos.y);
-  
   // No security or other checks in this first version:
   rotate(-heading); // Rotates the robot to zero heading.
   if ((x - pos.x) > 0)
@@ -163,8 +156,10 @@ void moveTo(int x, int y)
     sparki.moveBackward(pos.x - x);
   pos.x = x;
   showData(x - pos.x, y - pos.y);
+}
 
-  showData(x - pos.x, y - pos.y);
+void moveY(int y)
+{
   rotate(90);
   if ((y - pos.y) > 0)
     sparki.moveForward(y - pos.y);
@@ -172,7 +167,29 @@ void moveTo(int x, int y)
     sparki.moveBackward(pos.y - y);
   pos.y = y;
   showData(x - pos.x, y - pos.y);
- }
+}
+
+// Non diagonal (Cartesian) moveTo version. There are no negative possible positions in this coordinates system:
+void moveTo(int x, int y, bool firstMoveInX = true)
+{
+  state = "moveTo";
+  showData(x - pos.x, y - pos.y);
+ 
+   //To trask accumulative errors:
+  walkedDistanceX += abs(x - pos.x);
+  walkedDistanceY += abs(y - pos.y);
+  
+  if (firstMoveInX)
+  {
+    moveX(x);
+    moveY(y);
+  }
+  else
+  {
+    moveY(y);
+    moveX(x);
+  }  
+}
 
 void beepAndWait(int delayTime = 250)
 {
@@ -235,6 +252,7 @@ void getRoute(int x, int y)
     doorNumber = connectedRooms[roomsRoute[i]][roomsRoute[i+1]];
     route[i].x = doors[doorNumber].x;
     route[i].y = doors[doorNumber].y;
+    route[i].heading = doors[doorNumber].heading;
     i++;
   }
 }
@@ -273,8 +291,8 @@ void setup()
   rooms[2].maxX = 90; rooms[2].maxY = 63;
 
   //Doors (each array entry contains the center of a door):
-  doors[0].x = 25; doors[0].y = 31;
-  doors[1].x = 45; doors[1].y = 46;
+  doors[0].x = 24; doors[0].y = 31; doors[0].heading = 90;
+  doors[1].x = 45; doors[1].y = 46; doors[1].heading = 0;
   
   //Connected rooms (these data can be calculated by the program in the future):
   connectedRooms[0][0] = -1; // A room does not have a door to connect with itself.
@@ -290,7 +308,7 @@ void setup()
   connectedRooms[2][2] = -1;
 
   //Home:
-  home.x = 10; home.y = 10;
+  home.x = 10; home.y = 10; home.heading = 90;
 
   //Initializes the robot:  
   pos.x = 0;
@@ -303,9 +321,20 @@ void setup()
   //User application:
   //##Document these tests in the webpage and delete these comments...
   //##Test 1: moving the robot to the doors.
+  
+  //##while ()
   moveTo(doors[0].x, doors[0].y);
+  beepAndWait();
+  if (doors[0].heading == 90)
+    moveTo(pos.x, pos.y + 10);
+  beepAndWait();
+  
   moveTo(doors[1].x, doors[1].y);
-
+  beepAndWait();
+  if (doors[1].heading == 90)
+    moveTo(pos.x, pos.y + 10);
+  beepAndWait();
+  
   //##Test 2: finding the rooms for different points:
   //##  
 }
