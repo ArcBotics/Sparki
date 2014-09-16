@@ -149,13 +149,11 @@ void rotate(float angle)
 void moveX(int x)
 {
   // No security or other checks in this first version:
-  rotate(-heading); // Rotates the robot to zero heading.
   if ((x - pos.x) > 0)
     sparki.moveForward(x - pos.y);
   else if ((x - pos.x) < 0)
     sparki.moveBackward(pos.x - x);
   pos.x = x;
-  showData(x - pos.x, y - pos.y);
 }
 
 void moveY(int y)
@@ -166,7 +164,6 @@ void moveY(int y)
   else if ((y - pos.y) < 0)
     sparki.moveBackward(pos.y - y);
   pos.y = y;
-  showData(x - pos.x, y - pos.y);
 }
 
 // Non diagonal (Cartesian) moveTo version. There are no negative possible positions in this coordinates system:
@@ -178,16 +175,21 @@ void moveTo(int x, int y, bool firstMoveInX = true)
    //To trask accumulative errors:
   walkedDistanceX += abs(x - pos.x);
   walkedDistanceY += abs(y - pos.y);
-  
+
+  rotate(-heading); // Rotates the robot to zero heading.  
   if (firstMoveInX)
   {
     moveX(x);
+    showData(x - pos.x, y - pos.y);    
     moveY(y);
+    showData(x - pos.x, y - pos.y);
   }
   else
   {
     moveY(y);
+    showData(x - pos.x, y - pos.y);
     moveX(x);
+    showData(x - pos.x, y - pos.y);
   }  
 }
 
@@ -323,16 +325,9 @@ void setup()
   //##Test 1: moving the robot to the doors.
   
   //##while ()
-  moveTo(doors[0].x, doors[0].y);
+  moveTo(doors[0].x, doors[0].y, doors[0].heading == 90);
   beepAndWait();
-  if (doors[0].heading == 90)
-    moveTo(pos.x, pos.y + 10);
-  beepAndWait();
-  
-  moveTo(doors[1].x, doors[1].y);
-  beepAndWait();
-  if (doors[1].heading == 90)
-    moveTo(pos.x, pos.y + 10);
+  moveTo(doors[1].x, doors[1].y, doors[1].heading == 90);
   beepAndWait();
   
   //##Test 2: finding the rooms for different points:
