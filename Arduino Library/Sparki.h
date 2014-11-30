@@ -275,6 +275,7 @@ public:
 
 // individual motor control (non-blocking)
 // speed range is percent 0-100
+  void motorRotate( int motor, int direction,  int speed);
   void motorRotate( int motor, int direction,  int speed, long steps);
   void motorStop(int motor);
 
