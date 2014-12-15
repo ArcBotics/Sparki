@@ -518,7 +518,7 @@ void SparkiClass::speed(uint8_t speed)
 
 void SparkiClass::motorRotate(int motor, int direction, int speed)
 {
-   motorRotate(int motor, int direction, int speed, ULONG_MAX)
+   motorRotate(motor, direction, speed, ULONG_MAX);
 }
 
 void SparkiClass::motorRotate(int motor, int direction, int speed, long steps)
