@@ -1027,7 +1027,7 @@ uint8_t is_reversed = 0;
 
 #ifdef NO_LCD
 const uint8_t pagemap[] = {};
-uint8_t font[] PROGMEM = {};
+const uint8_t font[] PROGMEM = {};
 uint8_t st7565_buffer[] = {};
 #endif
 
@@ -1036,7 +1036,7 @@ uint8_t st7565_buffer[] = {};
 const uint8_t pagemap[] = { 3, 2, 1, 0, 7, 6, 5, 4 };
 
 // a 5x7 font table
-uint8_t font[] PROGMEM = { 
+const uint8_t font[] PROGMEM = { 
   0x0, 0x0, 0x0, 0x0, 0x0,       // Ascii 0
   0x7C, 0xDA, 0xF2, 0xDA, 0x7C,  //ASC(01)
   0x7C, 0xD6, 0xF2, 0xD6, 0x7C,  //ASC(02)
