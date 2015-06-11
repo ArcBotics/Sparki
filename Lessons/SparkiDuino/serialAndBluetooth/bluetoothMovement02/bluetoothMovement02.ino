@@ -83,14 +83,14 @@ void instructions()
 //end code to check for OK communication
   else //send instructions once a second
     {
-    Serial1.println("Sparki expects to receive communication that is");
-    Serial1.println("a movement command (Forward, Right, Left, Stop)");
-    Serial1.println("followed by a number to control that command.");
-    Serial1.println("Do not send Sparki more than five commands at a time.");
-    Serial1.println("The line below is an example of valid communication.");
-    Serial1.println("Forward 10 Right 90 Forward 10 Left 90 Forward 10");
-    Serial1.println("Type OK and press Send or Return to continue.");
-    Serial1.println();//empty line to separate messages
+     Serial1.println("Sparki expects to receive communication that are");
+      Serial1.println("movement commands (Forward, Right, Left, Stop)");
+      Serial1.println("separated by spaces.");
+      Serial1.println("Do not send Sparki more than ten commands at a time.");
+      Serial1.println("The line below is an example of valid communication.");
+      Serial1.println("Forward Right Forward Left Forward");
+      Serial1.println("Type OK and press Send or Return to continue.");
+      Serial1.println();//empty line to separate messages
     delay(2000);
     }
   }
