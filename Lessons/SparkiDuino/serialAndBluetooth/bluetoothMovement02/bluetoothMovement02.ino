@@ -5,7 +5,6 @@ boolean returnFlag; //flag to check for carriage return
 boolean oKSent; //flag to check for OK communication
 String commArray [10]; //array to store communication
 int arrayCounter = 0; //integer to count through commArray
-boolean commReady; //boolean to tell Sparki it is ready to receive
 
 void setup()
 {
