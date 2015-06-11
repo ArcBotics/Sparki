@@ -20,9 +20,20 @@ void loop()
 }
 
 void readComm()
-{
+{ 
   while (Serial1.available())
   {
+    //added this to clear array
+    if(returnFlag)
+    {
+      for(int i = 0; i <= 9; i++) //for loop to go through commArray
+      {
+        commArray[i] = "";
+      }
+      returnFlag = false; //reset flag
+    }
+    //end clearing array code
+    
     int inByte = Serial1.read();
     if ((char)inByte == '\n')
     {
