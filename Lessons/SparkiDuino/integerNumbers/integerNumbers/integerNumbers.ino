@@ -12,22 +12,22 @@ void loop()
   
   foo = 10;
   
-  int bar = 4;
+  int blerp = 4;
   
   sparki.print( "foo: ");
   sparki.println( foo );
   
-  sparki.print( "bar: ");
-  sparki.println( bar );
+  sparki.print( "blerp: ");
+  sparki.println( blerp );
   
-  sparki.print( "foo + bar:: ");
-  sparki.println( foo + bar ); // foo added to bar
+  sparki.print( "foo + blerp:: ");
+  sparki.println( foo + blerp ); // foo added to bar
   
-  sparki.print( "foo * bar: ");
-  sparki.println( foo * bar ); // foo multiplied times bar
+  sparki.print( "foo * blerp: ");
+  sparki.println( foo * blerp ); // foo multiplied times bar
   
-  sparki.print( "foo / bar: ");
-  sparki.println( foo / bar ); // foo divided by bar
+  sparki.print( "foo / blerp: ");
+  sparki.println( foo / blerp ); // foo divided by bar
   
   sparki.updateLCD();
   delay(1000); // wait 0.1 seconds (100 milliseconds)
