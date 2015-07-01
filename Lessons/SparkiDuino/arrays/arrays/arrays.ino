@@ -15,7 +15,7 @@ void loop() // code inside these brackets runs over and over forever
 
    //sparki.println( charArray ); // try to print the array
 
-   charArray[5] = '\0'; // put an end in the array
+   charArray[6] = '\0'; // put an end in the array
 
    sparki.println( charArray ); // print the array with an end
 
