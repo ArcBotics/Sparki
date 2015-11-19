@@ -36,6 +36,8 @@ uint8_t pixel_color = WHITE;
 
 uint8_t ir_active = 1;
 
+uint8_t LCD_TYPE = 0; // 0=small, 1=large
+
 static volatile uint8_t move_speed = 100;
 static volatile uint8_t speed_index[3];
 static volatile uint8_t speed_array[3][SPEED_ARRAY_LENGTH];    
@@ -115,6 +117,14 @@ void SparkiClass::begin( ) {
   else{
     servo_deg_offset = EEPROM.read(0);
   }
+  
+  if( EEPROM.read(1) == 88) {
+    LCD_TYPE = 1; // large LCD
+  }
+  else{
+    LCD_TYPE = 0; // small LCD
+  }
+
   
   // keep offset from going too off if EEPROM corrupted
   if (servo_deg_offset > MAX_SERVO_OFFSET){
@@ -932,11 +942,18 @@ The Scheduler
 Every 200uS (5,000 times a second), we update the 2 shift registers used to increase
 the amount of outputs the processor has
 ***********************************************************************************/
+
+static volatile uint8_t shift_old_0 = 0x00;
+static volatile uint8_t shift_old_1 = 0x00;
+
 ISR(TIMER4_COMPA_vect)          // interrupt service routine that wraps a user defined function supplied by attachInterrupt
 {
 //void SparkiClass::scheduler(){ 
     // Clear the timer interrupt counter
     TCNT4=0;
+    
+    shift_old_0 = shift_outputs[0];
+    shift_old_1 = shift_outputs[1];
 
 	// clear the shift register values so we can re-write them
     shift_outputs[0] = 0x00;
@@ -1009,12 +1026,18 @@ ISR(TIMER4_COMPA_vect)          // interrupt service routine that wraps a user d
     shift_outputs[0] |= _steps_right[step_index[MOTOR_RIGHT]];
     shift_outputs[0] |= _steps_left[step_index[MOTOR_GRIPPER]];
     shift_outputs[1] |= _steps_left[step_index[MOTOR_LEFT]];
-    
-	//output values to shift registers
-    PORTD &= ~(1<<5);    // pull PD5 (shift-register latch) low
-    SPI.transfer(shift_outputs[1]);
-    SPI.transfer(shift_outputs[0]);
-    PORTD |= (1<<5);    // pull PD5 (shift-register latch) high 
+
+    if( (shift_old_0 != shift_outputs[0]) || (shift_old_1 != shift_outputs[1]) ){
+        //return LCD chip select high
+        //digitalWrite(LCD_CS,HIGH); 
+        PORTB |= 0x01; 
+
+        //output values to shift registers
+        PORTD &= ~(1<<5);    // pull PD5 (shift-register latch) low
+        SPI.transfer(shift_outputs[1]);
+        SPI.transfer(shift_outputs[0]);
+        PORTD |= (1<<5);    // pull PD5 (shift-register latch) high         
+    }
 }
 
 /***********************************************************************************
@@ -1711,7 +1734,13 @@ void SparkiClass::st7565_init(void) {
   // LCD bias select
   st7565_command(CMD_SET_BIAS_7);
   // ADC select
-  st7565_command(CMD_SET_ADC_REVERSE);
+  if(LCD_TYPE == 0){ // Small LCD
+    st7565_command(CMD_SET_ADC_REVERSE);
+  }
+  if(LCD_TYPE == 1){ // Large LCD
+    st7565_command(CMD_SET_ADC_NORMAL);
+  }
+  
   // SHL select
   st7565_command(CMD_SET_COM_NORMAL);
   // Initial display line
@@ -1733,7 +1762,13 @@ void SparkiClass::st7565_init(void) {
   _delay_ms(10);
 
   // set lcd operating voltage (regulator resistor, ref voltage resistor)
-  st7565_command(CMD_SET_RESISTOR_RATIO | 0x6);
+  if(LCD_TYPE == 0){ // Small LCD
+    st7565_command(CMD_SET_RESISTOR_RATIO | 0x6);
+  }
+  if(LCD_TYPE == 1){ // Large LCD
+    st7565_command(CMD_SET_RESISTOR_RATIO | 0x5);
+  }
+
   // initial display line
   // set page address
   // set column address
@@ -1746,15 +1781,18 @@ void SparkiClass::st7565_init(void) {
 
 inline void SparkiClass::spiwrite(uint8_t c) {
 noInterrupts();
-    //  un chip-select the shift registers
-    PORTD |= 0x20;    // pull PD5 high to latch in spi transfers
-    //  chip-select the screen
-    digitalWrite(LCD_CS,LOW);
-
+    //  make sure un chip-select the shift registers
+    PORTD |= 0x20;
+    //  chip-select the LCD
+    //digitalWrite(LCD_CS,LOW);
+    PORTB &= 0xFE;
+    
     SPDR = c; // push the byte to be loaded to the SPI register
     while(!(SPSR & (1<<SPIF))); //wait till the register completes
 
-    digitalWrite(LCD_CS,HIGH);
+    //return LCD chip select high
+    //digitalWrite(LCD_CS,HIGH);
+    PORTB |= 0x01;
 interrupts();
 }
 void SparkiClass::st7565_command(uint8_t c) {
@@ -1808,11 +1846,11 @@ void SparkiClass::updateLCD(void) {
     maxcol = xUpdateMax;
 #else
     // start at the beginning of the row
-    col = 0;
+    col = 2;
     maxcol = LCDWIDTH-1;
 #endif
 
-    st7565_command(CMD_SET_COLUMN_LOWER | ((col+ST7565_STARTBYTES) & 0xf));
+    st7565_command(CMD_SET_COLUMN_LOWER | ((col+ST7565_STARTBYTES) & 0xF0));
     st7565_command(CMD_SET_COLUMN_UPPER | (((col+ST7565_STARTBYTES) >> 4) & 0x0F));
     st7565_command(CMD_RMW);
     
