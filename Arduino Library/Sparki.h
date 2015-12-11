@@ -65,7 +65,6 @@
 #define RGB_OFF     0,   0,   0
 
 // properties about the robot in cm
-#define PI 3.14159
 #define STEPS_PER_REV 4096          // steps for wheels to revolve 360 degrees
 #define WHEEL_DIAMETER_CM 5.00
 #define TRACK_WIDTH_CM 8.51         //tire seperation in cm  
