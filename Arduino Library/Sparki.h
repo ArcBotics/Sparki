@@ -283,10 +283,12 @@ public:
    
   void onIR();
   void offIR();
-
+  
 // Display Functions
+  void progmem_lcd_logo(void);
+  void ensure_lcd_init(void);
+  void beginDisplay(void);
   void st7565_init(void);
-  void beginDisplay();
   void st7565_command(uint8_t c);
   void st7565_data(uint8_t c);
   void st7565_set_brightness(uint8_t val);
@@ -324,6 +326,7 @@ public:
   void drawBitmap(uint8_t x, uint8_t y, 
 		  const uint8_t *bitmap, uint8_t w, uint8_t h);
   
+  void updateBoundingBox(uint8_t , uint8_t , uint8_t , uint8_t );
 private:    
   static void scheduler();
 
