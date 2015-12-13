@@ -125,7 +125,6 @@ void SparkiClass::begin( ) {
   else{
     LCD_TYPE = 0; // small LCD
   }
-  LCD_TYPE = 1; // large LCD
   
   // keep offset from going too off if EEPROM corrupted
   if (servo_deg_offset > MAX_SERVO_OFFSET){
