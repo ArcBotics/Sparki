@@ -211,6 +211,7 @@ void SparkiClass::begin( ) {
   EIMSK |= (1 << INT6); 
   
   interrupts();
+  i2cInit(); // start up i2c for the accelerometer and magnetometer
   #ifndef NO_ACCEL
   initAccelerometer();
   #endif
