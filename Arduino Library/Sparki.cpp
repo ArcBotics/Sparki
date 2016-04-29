@@ -1748,10 +1748,11 @@ void SparkiClass::my_setpixel(uint8_t x, uint8_t y, uint8_t color) {
     return;
 
   // x is which column
-  if (color) 
+  if (color == WHITE) 
     st7565_buffer[x+ (y/8)*128] |= _BV(7-(y%8));  
-  else
+  if (color == BLACK)
     st7565_buffer[x+ (y/8)*128] &= ~_BV(7-(y%8)); 
+    
 }
 
 // the most basic function, set a single pixel
@@ -1761,9 +1762,9 @@ void SparkiClass::drawPixel(uint8_t x, uint8_t y) {
     return;
 
   // x is which column
-  if (WHITE) 
+  if (pixel_color == WHITE) 
     st7565_buffer[x+ (y/8)*128] |= _BV(7-(y%8));  
-  else
+  if (pixel_color == BLACK)
     st7565_buffer[x+ (y/8)*128] &= ~_BV(7-(y%8)); 
 
   updateBoundingBox(x,y,x,y);
