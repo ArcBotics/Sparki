@@ -1855,7 +1855,7 @@ void SparkiClass::progmem_lcd_logo(){
     maxcol = LCDWIDTH-1;
 #endif
 
-    st7565_command(CMD_SET_COLUMN_LOWER | ((col+ST7565_STARTBYTES) & 0xF0));
+    st7565_command(CMD_SET_COLUMN_LOWER | ((col+ST7565_STARTBYTES) & 0xF));
     st7565_command(CMD_SET_COLUMN_UPPER | (((col+ST7565_STARTBYTES) >> 4) & 0x0F));
     st7565_command(CMD_RMW);
     
@@ -2031,7 +2031,7 @@ void SparkiClass::updateLCD(void) {
     maxcol = LCDWIDTH-1;
 #endif
 
-    st7565_command(CMD_SET_COLUMN_LOWER | ((col+ST7565_STARTBYTES) & 0xF0));
+    st7565_command(CMD_SET_COLUMN_LOWER | ((col+ST7565_STARTBYTES) & 0xF));
     st7565_command(CMD_SET_COLUMN_UPPER | (((col+ST7565_STARTBYTES) >> 4) & 0x0F));
     st7565_command(CMD_RMW);
     
