@@ -855,6 +855,7 @@ SIGNAL(INT6_vect) {
         currentPulse = 0;
       }
       else{
+        if(currentPulse < 50){
           // otherwise, read the current code
           if(pinStatus){ //(PE6 high) pulse has risen from the end of a low pulse
             pulsesIR[currentPulse][0] = timeSinceLastPulse;
@@ -863,6 +864,7 @@ SIGNAL(INT6_vect) {
             pulsesIR[currentPulse][1] = timeSinceLastPulse;
             currentPulse++;
           }  
+        }
       }    
       lastPulseTime = currentTime;
   }
